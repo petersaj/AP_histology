@@ -79,15 +79,21 @@ if ~im_rgb
         im_montage{curr_channel} = curr_montage.CData;
         
         im_hist = histcounts(im_montage{curr_channel}(im_montage{curr_channel} > 0),0:max(im_montage{curr_channel}(:)));
-        im_hist_deriv = [0;diff(smooth(im_hist,1000,'loess'))];
+        im_hist_smoothed = smooth(im_hist,1000,'loess');
+        im_hist_deriv = [0;diff(im_hist_smoothed)];
         
+        % The signal minimum is the valley between background and signal
         [~,bg_down] = min(im_hist_deriv);
         bg_signal_min = find(im_hist_deriv(bg_down:end) > 0,1) + bg_down;
-        [~,bg_median_rel] = max(im_hist(bg_signal_min:end));
+        % The signal maximum is 1%ile of the median
+        [~,bg_median_rel] = max(im_hist_smoothed(bg_signal_min:end));
         signal_median = bg_median_rel + bg_signal_min;
+        signal_high_cutoff = im_hist_smoothed(signal_median)*0.01;
+        signal_high_rel = find(im_hist_smoothed(signal_median:end) < signal_high_cutoff,1);
+        signal_high = signal_high_rel + signal_median;
         
         cmin = bg_signal_min;
-        cmax = signal_median*3;
+        cmax = signal_high;
         caxis([cmin,cmax]);
         
         channel_caxis(curr_channel,:) = [cmin,cmax];
