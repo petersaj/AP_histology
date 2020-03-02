@@ -214,8 +214,8 @@ switch eventdata.Key
                 use_trajectory_areas = ~isnan(trajectory_areas_uncut) & trajectory_areas_uncut > 1;
                 trajectory_areas = reshape(trajectory_areas_uncut(use_trajectory_areas),[],1);
                 
-                probe_ccf(curr_probe).trajectory_coords = trajectory_coords(use_trajectory_areas,:);
-                probe_ccf(curr_probe).trajectory_areas = trajectory_areas;
+                probe_ccf(curr_probe).trajectory_coords = double(trajectory_coords(use_trajectory_areas,:));
+                probe_ccf(curr_probe).trajectory_areas = double(trajectory_areas);
                 
             end
             
