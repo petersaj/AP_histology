@@ -33,8 +33,9 @@ for curr_slice = 1:length(slice_im)
     
     % Estimate slice white threshold
     curr_im_bw = nanmean(curr_histology,3);
+    % (get histogram of values > 0 in case unimaged area)
     [im_hist,im_hist_edges] = histcounts(curr_im_bw, ...
-        linspace(min(curr_im_bw(:)),max(curr_im_bw(:)),100));
+        linspace(max(1,min(curr_im_bw(:))),max(curr_im_bw(:)),100));
     im_hist_deriv = [0;diff(smooth(im_hist,10))];
     [~,bg_down] = min(im_hist_deriv);
     bg_signal_min = find(im_hist_deriv(bg_down:end) > 0,1) + bg_down;
