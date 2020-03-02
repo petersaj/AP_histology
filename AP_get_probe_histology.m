@@ -93,8 +93,8 @@ switch eventdata.Key
         update_slice(gui_fig);
         
     % Number: add coordinates for the numbered probe
-    case cellfun(@num2str,num2cell(1:9),'uni',false)
-        curr_probe = str2num(eventdata.Key);
+    case [cellfun(@num2str,num2cell(1:9),'uni',false),cellfun(@(x) ['numpad' num2str(x)],num2cell(1:9),'uni',false)]
+        curr_probe = str2num(eventdata.Key(end));
         
         if curr_probe > gui_data.n_probes
            disp(['Probe ' eventdata.Key ' selected, only ' num2str(gui_data.n_probes) ' available']);
@@ -286,6 +286,10 @@ for curr_probe = 1:length(probe_ccf)
     xyz = bsxfun(@minus,probe_ccf(curr_probe).points,r0);
     [~,~,V] = svd(xyz,0);
     histology_probe_direction = V(:,1);
+    % (make sure the direction goes down in DV - flip if it's going up)
+    if histology_probe_direction(2) < 0
+        histology_probe_direction = -histology_probe_direction;
+    end
     
     line_eval = [-1000,1000];
     probe_fit_line = bsxfun(@plus,bsxfun(@times,line_eval',histology_probe_direction'),r0);
