@@ -32,14 +32,13 @@ for curr_slice = 1:length(slice_im)
     curr_av_thresh = +(curr_av > 1);
     
     % Estimate slice white threshold
+    % (do this by estimating background from border pixels)    
     curr_im_bw = nanmean(curr_histology,3);
-    % (get histogram of values > 0 in case unimaged area)
-    [im_hist,im_hist_edges] = histcounts(curr_im_bw, ...
-        linspace(max(1,min(curr_im_bw(:))),max(curr_im_bw(:)),100));
-    im_hist_deriv = [0;diff(smooth(im_hist,10))];
-    [~,bg_down] = min(im_hist_deriv);
-    bg_signal_min = find(im_hist_deriv(bg_down:end) > 0,1) + bg_down;
-    slice_threshold = im_hist_edges(bg_signal_min);
+    
+    border_px = 10;
+    border_idx = true(size(curr_im_bw));
+    border_idx(border_px+1:end-border_px,border_px+1:end-border_px) = false;
+    slice_threshold = nanmean(curr_im_bw(border_idx),1) + 1;
     
     curr_histology_thresh = +(curr_im_bw > slice_threshold);
     
