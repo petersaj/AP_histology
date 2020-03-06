@@ -54,7 +54,7 @@ n_im = length(im_fn);
 h = waitbar(0,'Loading and resizing images...');
 if ~im_is_rgb
     % If channels separated as b/w, load in separately and white balance
-
+    
     n_channels = sum(any([im_info.Height;im_info.Width],1));
     im_resized = cell(n_im,n_channels);
     
@@ -108,14 +108,14 @@ if ~im_is_rgb
     color_order_gun = {'red';'green';'blue'};
     [~,color_order_slide] = ismember(channel_color,color_order_gun);
     
-%     % Display montage of final balanced image, sort color channels by RGB
-%     im_montage_rgb = zeros(size(im_montage{1},1),size(im_montage{1},2),3);
-%     im_montage_rgb(:,:,color_order_slide) = ...
-%         cell2mat(arrayfun(@(ch) rescale(im_montage{ch}, ...
-%         'InputMin',channel_caxis(ch,1),'InputMax',channel_caxis(ch,2)), ...
-%         permute(1:n_channels,[1,3,2]),'uni',false));
-%     figure;imshow(im_montage_rgb);
-%     title('Overview of all images');
+    %     % Display montage of final balanced image, sort color channels by RGB
+    %     im_montage_rgb = zeros(size(im_montage{1},1),size(im_montage{1},2),3);
+    %     im_montage_rgb(:,:,color_order_slide) = ...
+    %         cell2mat(arrayfun(@(ch) rescale(im_montage{ch}, ...
+    %         'InputMin',channel_caxis(ch,1),'InputMax',channel_caxis(ch,2)), ...
+    %         permute(1:n_channels,[1,3,2]),'uni',false));
+    %     figure;imshow(im_montage_rgb);
+    %     title('Overview of all images');
     
     % Store RGB for each slide
     im_rgb = cellfun(@(x) zeros(size(x,1),size(x,2),3),im_resized(:,1),'uni',false);
@@ -127,12 +127,12 @@ if ~im_is_rgb
     end
     
 elseif im_is_rgb
-    % If images are already RGB, just load in and resize 
+    % If images are already RGB, just load in and resize
     im_rgb = cell(n_im,1);
     for curr_im = 1:n_im
         im_rgb{curr_im} = imresize(imread(im_fn{curr_im}),resize_factor);
         waitbar(curr_im/n_im,h,['Loading and resizing images (' num2str(curr_im) '/' num2str(n_im) ')...']);
-    end 
+    end
     close(h)
 end
 
@@ -162,26 +162,29 @@ function slice_click(slice_fig,eventdata)
 
 slice_data = guidata(slice_fig);
 
-selected_slice_bw = bwselect(slice_data.mask,eventdata.IntersectionPoint(1),eventdata.IntersectionPoint(2));
-
-% If the selected slice is already part of a mask, delete that ROI
-if size(slice_data.user_masks,3) > 0
-    overlap_roi = any(selected_slice_bw(:) & reshape(slice_data.user_masks,[],size(slice_data.user_masks,3)),1);
-    if any(overlap_roi)
-        % Clear overlapping mask
-        slice_data.user_masks(:,:,overlap_roi) = [];
-        
-        % Delete and clear bounding box
-        delete(slice_data.user_rectangles(overlap_roi));
-        slice_data.user_rectangles(overlap_roi) = [];
-        
-        % Update gui data
-        guidata(slice_fig, slice_data);
-        return
-    end
-end
-
 if eventdata.Button == 1
+    
+    selected_slice_bw = bwselect(slice_data.mask,eventdata.IntersectionPoint(1),eventdata.IntersectionPoint(2));
+    
+    % If the selected slice is already part of a user mask, delete that ROI
+    if size(slice_data.user_masks,3) > 0
+        clicked_mask = false(size(slice_data.mask));
+        clicked_mask(round(eventdata.IntersectionPoint(2)),round(eventdata.IntersectionPoint(1))) = true;
+        overlap_roi = any(clicked_mask(:) & reshape(slice_data.user_masks,[],size(slice_data.user_masks,3)),1);
+        if any(overlap_roi)
+            % Clear overlapping mask
+            slice_data.user_masks(:,:,overlap_roi) = [];
+            
+            % Delete and clear bounding box
+            delete(slice_data.user_rectangles(overlap_roi));
+            slice_data.user_rectangles(overlap_roi) = [];
+            
+            % Update gui data
+            guidata(slice_fig, slice_data);
+            return
+        end
+    end
+    
     % If left button pressed, create new slice ROI
     roi_num = size(slice_data.user_masks,3) + 1;
     
@@ -211,7 +214,7 @@ elseif eventdata.Button == 3
         rectangle('Position',manual_roi.getPosition,'EdgeColor','w');
     
     % Delete the ROI
-    manual_roi.delete;    
+    manual_roi.delete;
     
 end
 
@@ -224,7 +227,7 @@ function slice_keypress(slice_fig,eventdata)
 % Move to next slide with spacebar
 
 if strcmp(eventdata.Key,'space')
-    update_slide(slice_fig) 
+    update_slide(slice_fig)
 end
 
 end
