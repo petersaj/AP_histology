@@ -25,7 +25,7 @@ else
 end
 
 % If image is RGB, set flag
-im_rgb = strcmp(im_info(1).PhotometricInterpretation,'RGB');
+im_is_rgb = strcmp(im_info(1).PhotometricInterpretation,'RGB');
 
 % Set resize factor from user (if provided), or if no resize factor
 % provided and pixel size is available, resize to match CCF
@@ -51,13 +51,13 @@ end
 % Load and resize images
 n_im = length(im_fn);
 
-if ~im_rgb
+h = waitbar(0,'Loading and resizing images...');
+if ~im_is_rgb
     % If channels separated as b/w, load in separately and white balance
 
     n_channels = sum(any([im_info.Height;im_info.Width],1));
     im_resized = cell(n_im,n_channels);
     
-    h = waitbar(0,'Loading and resizing images...');
     for curr_im = 1:n_im
         for curr_channel = 1:n_channels
             im_resized{curr_im,curr_channel} = imresize(imread(im_fn{curr_im},curr_channel),resize_factor);
@@ -126,12 +126,14 @@ if ~im_rgb
             permute(1:n_channels,[1,3,2]),'uni',false));
     end
     
-elseif im_rgb
+elseif im_is_rgb
     % If images are already RGB, just load in and resize 
     im_rgb = cell(n_im,1);
     for curr_im = 1:n_im
         im_rgb{curr_im} = imresize(imread(im_fn{curr_im}),resize_factor);
+        waitbar(curr_im/n_im,h,['Loading and resizing images (' num2str(curr_im) '/' num2str(n_im) ')...']);
     end 
+    close(h)
 end
 
 % Set up GUI to pick slices on slide to extract
@@ -254,10 +256,10 @@ min_slice = 1000; %(1000/10)^2; % (um/10(CCF units))^2
 curr_im_bw = nanmean(slice_data.im_rgb{slice_data.curr_slide},3);
 [im_hist,im_hist_edges] = histcounts(curr_im_bw, ...
     linspace(min(curr_im_bw(:)),max(curr_im_bw(:)),100));
-im_hist_deriv = [0;diff(smooth(im_hist,10))];
+im_hist_deriv = [0;diff(smooth(im_hist,3))];
 [~,bg_down] = min(im_hist_deriv);
 bg_signal_min = find(im_hist_deriv(bg_down:end) > 0,1) + bg_down;
-slice_threshold = im_hist_edges(bg_signal_min);
+slice_threshold = im_hist_edges(bg_signal_min)*0.5; % err on the smaller side
 
 slice_mask = imfill(bwareaopen(mean( ...
     slice_data.im_rgb{slice_data.curr_slide},3) > slice_threshold,min_slice),'holes');
