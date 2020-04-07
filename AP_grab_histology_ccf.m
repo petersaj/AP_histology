@@ -124,7 +124,18 @@ switch eventdata.Key
         opts.Default = 'Yes';
         opts.Interpreter = 'tex';
         user_confirm = questdlg('\fontsize{15} Save and quit?','Confirm exit',opts);
-        if strcmp(user_confirm,'Yes')           
+        if strcmp(user_confirm,'Yes')
+            
+            % Check that a CCF slice point exists for each histology slice
+            if any(isnan(gui_data.slice_points(:)))
+                createmode = struct;
+                createmode.Interpreter = 'tex';
+                createmode.WindowStyle = 'modal';
+                msgbox('\fontsize{12} Some histology slice(s) not assigned CCF slice', ...
+                    'Not saving','error',createmode);
+                return
+            end
+            
             % Go through each slice, pull full-resolution atlas slice and
             % corrsponding coordinates       
             histology_ccf_init = cell(length(gui_data.slice_im),1);
