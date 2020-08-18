@@ -9,7 +9,7 @@ av = readNPY([allen_atlas_path filesep 'annotation_volume_10um_by_index.npy']);
 st = loadStructureTree([allen_atlas_path filesep 'structure_tree_safe_2017.csv']);
 
 % Set paths for histology images and directory to save slice/alignment
-im_path = 'C:\Users\Andrew\Desktop\temp_histology\AP061';
+im_path = 'C:\Users\Andrew\Desktop\temp_histology\anna_test';
 slice_path = [im_path filesep 'slices'];
 
 %% 2) Preprocess slide images to produce slice images
@@ -20,6 +20,7 @@ slice_path = [im_path filesep 'slices'];
 % available in metadata then automatically scales to CCF resolution,
 % otherwise user can specify the resize factor as a second argument)
 AP_process_histology(im_path);
+% resize_factor = 1/6.135; % (Old scope: 1.63 um/px)
 % AP_process_histology(im_path,resize_factor); % user-specified resize factor
 
 % (optional) Rotate, center, pad, flip slice images
@@ -32,7 +33,7 @@ AP_grab_histology_ccf(tv,av,st,slice_path);
 
 % Align CCF slices and histology slices
 % (first: automatically, by outline)
-AP_auto_align_histology_ccf(slice_path)
+AP_auto_align_histology_ccf(slice_path);
 % (second: curate manually)
 AP_manual_align_histology_ccf(tv,av,st,slice_path);
 
@@ -49,7 +50,11 @@ AP_view_aligned_histology_volume(tv,av,st,slice_path,2);
 AP_get_probe_histology(tv,av,st,slice_path);
 
 % Align histology to electrophysiology
-AP_align_probe_histology(st,slice_path,spike_times,spike_templates,template_depths);
+use_probe = 1;
+AP_align_probe_histology(st,slice_path, ...
+    spike_times,spike_templates,template_depths, ...
+    lfp,channel_positions(:,2), ...
+    use_probe);
 
 % Extract slices from full-resolution images
 % (not worth it at the moment, each slice is 200 MB)

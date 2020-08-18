@@ -210,10 +210,8 @@ switch eventdata.Key
                 
                 trajectory_areas_uncut = gui_data.av(trajectory_coords_idx)';
                 
-                % Get rid of NaN's and start/end 1's (non-parsed)
-                trajectory_areas_parsed = find(trajectory_areas_uncut > 1);
-                use_trajectory_areas = trajectory_areas_parsed(1): ...
-                    trajectory_areas_parsed(end);
+                % Get rid of NaN's and start/end 1's (non-bra
+                use_trajectory_areas = ~isnan(trajectory_areas_uncut) & trajectory_areas_uncut > 1;
                 trajectory_areas = reshape(trajectory_areas_uncut(use_trajectory_areas),[],1);
                 
                 probe_ccf(curr_probe).trajectory_coords = double(trajectory_coords(use_trajectory_areas,:));

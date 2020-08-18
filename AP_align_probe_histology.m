@@ -1,4 +1,8 @@
-function AP_align_probe_histology(st,slice_path,spike_times,spike_templates,template_depths,use_probe)
+function AP_align_probe_histology(st,slice_path, ...
+    spike_times,spike_templates,template_depths, ...
+    lfp,lfp_channel_positions, ...
+    use_probe)
+% AP_align_probe_histology(st,slice_path,spike_times,spike_templates,template_depths,lfp,lfp_channel_positions,use_probe)
 
 % If no probe specified, use probe 1
 if ~exist('use_probe','var') || isempty(use_probe)
@@ -37,8 +41,7 @@ mua_corr = corrcoef(binned_spikes_depth');
 gui_fig = figure('color','w','KeyPressFcn',@keypress);
 
 % Plot spike depth vs rate
-unit_ax = subplot(1,3,1);
-set(unit_ax,'Position',[0.1,0.1,0.1,0.8]);
+unit_ax = subplot('Position',[0.1,0.1,0.1,0.8]);
 scatter(norm_template_spike_n,template_depths,15,'k','filled');
 set(unit_ax,'YDir','reverse');
 ylim([0,max_depths]);
@@ -48,14 +51,29 @@ set(unit_ax,'FontSize',12)
 ylabel('Depth (\mum)');
 
 % Plot multiunit correlation
-multiunit_ax = subplot(1,3,2);
-set(multiunit_ax,'Position',[0.2,0.1,0.3,0.8]);
+multiunit_ax = subplot('Position',[0.2,0.1,0.3,0.8]);
 imagesc(depth_group_centers,depth_group_centers,mua_corr);
 caxis([0,max(mua_corr(mua_corr ~= 1))]); colormap(hot);
 ylim([0,max_depths]);
 set(multiunit_ax,'YTick',[]);
 title('MUA correlation');
 set(multiunit_ax,'FontSize',12)
+xlabel(multiunit_ax,'Multiunit depth');
+
+% Plot LFP median-subtracted correlation
+lfp_moving_median = 10; % channels to take sliding median
+lfp_ax = subplot('Position',[0.5,0.1,0.3,0.8]);
+imagesc(lfp_channel_positions,lfp_channel_positions, ...
+    corrcoef((movmedian(zscore(double(lfp),[],2),lfp_moving_median,1) - ...
+    nanmedian(zscore(double(lfp),[],2),1))'));
+xlim([0,max_depths]);
+ylim([0,max_depths]);
+set(lfp_ax,'YTick',[]);
+title('LFP power');
+set(lfp_ax,'FontSize',12)
+caxis([-1,1])
+xlabel(lfp_ax,'Depth (\mum)'); 
+colormap(lfp_ax,brewermap([],'*RdBu'));
 
 % Plot probe areas (interactive)
 % (load the colormap - located in the repository, find by associated fcn)
@@ -63,8 +81,7 @@ allenCCF_path = fileparts(which('allenCCFbregma'));
 cmap_filename = [allenCCF_path filesep 'allen_ccf_colormap_2017.mat'];
 load(cmap_filename);
 
-probe_areas_ax = subplot(1,3,3);
-set(probe_areas_ax,'Position',[0.5,0.1,0.05,0.8]);
+probe_areas_ax = subplot('Position',[0.8,0.1,0.05,0.8]);
 
 % (*10 to convert ccf to um)
 trajectory_area_boundaries = ...
@@ -81,12 +98,12 @@ set(probe_areas_ax,'YAxisLocation','right')
 
 ylim([0,max_depths]);
 ylabel({'Probe areas','(Arrow/shift keys to move)','(Escape: save & quit)'});
-set(probe_areas_ax,'FontSize',12)
+set(probe_areas_ax,'FontSize',10)
 
 % Draw boundary lines at borders (and undo clipping to extend across all)
 boundary_lines = gobjects;
 for curr_boundary = 1:length(trajectory_area_boundaries)
-    boundary_lines(curr_boundary,1) = line(probe_areas_ax,[-7.5,1.5], ...
+    boundary_lines(curr_boundary,1) = line(probe_areas_ax,[-13.5,1.5], ...
         repmat(trajectory_area_boundaries(curr_boundary),1,2),'color','b','linewidth',2);
 end
 set(probe_areas_ax,'Clipping','off');
@@ -149,7 +166,7 @@ switch eventdata.Key
             
             % Get the probe depths corresponding to the trajectory areas
             % (*10 = in um)
-            probe_depths = ([1:length(probe_ccf.trajectory_areas)]'-1 - ...
+            probe_depths = ([1:length(probe_ccf(gui_data.use_probe).trajectory_areas)]'-1 - ...
                 round(gui_data.probe_areas_ax_ylim(1)/10))*10;
             probe_ccf(gui_data.use_probe).probe_depths = probe_depths;
             

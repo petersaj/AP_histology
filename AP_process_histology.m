@@ -79,7 +79,7 @@ if ~im_is_rgb
         im_montage{curr_channel} = curr_montage.CData;
         
         im_hist = histcounts(im_montage{curr_channel}(im_montage{curr_channel} > 0),0:max(im_montage{curr_channel}(:)));
-        im_hist_smoothed = smooth(im_hist,1000,'loess');
+        im_hist_smoothed = smooth(im_hist,50,'loess');
         im_hist_deriv = [0;diff(im_hist_smoothed)];
         
         % The signal minimum is the valley between background and signal

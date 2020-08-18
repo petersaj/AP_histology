@@ -104,7 +104,7 @@ for curr_slice = 1:length(gui_data.slice_im)
         histology_surf(curr_slice).CData = gui_data.atlas_aligned_histology{curr_slice}(:,:,channel);
         
         % Set the alpha data
-        max_alpha = 0.5;
+        max_alpha = 1;
         slice_alpha = mat2gray(curr_slice_im,[value_thresh,double(max(curr_slice_im(:)))])*max_alpha;
         histology_surf(curr_slice).FaceAlpha = 'texturemap';
         histology_surf(curr_slice).AlphaDataMapping = 'none';
