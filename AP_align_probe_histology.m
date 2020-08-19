@@ -1,7 +1,6 @@
 function AP_align_probe_histology(st,slice_path, ...
     spike_times,spike_templates,template_depths, ...
-    lfp,lfp_channel_positions, ...
-    use_probe)
+    lfp,lfp_channel_positions,use_probe)
 % AP_align_probe_histology(st,slice_path,spike_times,spike_templates,template_depths,lfp,lfp_channel_positions,use_probe)
 
 % If no probe specified, use probe 1
@@ -83,13 +82,18 @@ load(cmap_filename);
 
 probe_areas_ax = subplot('Position',[0.8,0.1,0.05,0.8]);
 
-% (*10 to convert ccf to um)
-trajectory_area_boundaries = ...
-    [1;find(diff(double(probe_ccf(use_probe).trajectory_areas)) ~= 0);length(probe_ccf(use_probe).trajectory_areas)]*10;
-trajectory_area_centers = (trajectory_area_boundaries(1:end-1) + diff(trajectory_area_boundaries)/2);
-trajectory_area_labels = st.safe_name(probe_ccf(use_probe).trajectory_areas(round(trajectory_area_centers/10)));
+% Convert probe CCF coordinates to linear depth (*10 to convert to um)
+probe_trajectory_depths = ...
+    pdist2(probe_ccf(use_probe).trajectory_coords, ...
+    probe_ccf(use_probe).trajectory_coords(1,:))*10;
 
-image([],[1:length(probe_ccf(use_probe).trajectory_areas)]*10,probe_ccf(use_probe).trajectory_areas);
+trajectory_area_boundary_idx = ...
+    [1;find(diff(double(probe_ccf(use_probe).trajectory_areas)) ~= 0)+1];
+trajectory_area_boundaries = probe_trajectory_depths(trajectory_area_boundary_idx);
+trajectory_area_centers = (trajectory_area_boundaries(1:end-1) + diff(trajectory_area_boundaries)/2);
+trajectory_area_labels = st.safe_name(probe_ccf(use_probe).trajectory_areas(trajectory_area_boundary_idx));
+
+image([],probe_trajectory_depths,probe_ccf(use_probe).trajectory_areas);
 colormap(probe_areas_ax,cmap);
 caxis([1,size(cmap,1)])
 set(probe_areas_ax,'YTick',trajectory_area_centers,'YTickLabels',trajectory_area_labels);
