@@ -38,9 +38,13 @@ for curr_slice = 1:length(slice_im)
     border_px = 10;
     border_idx = true(size(curr_im_bw));
     border_idx(border_px+1:end-border_px,border_px+1:end-border_px) = false;
-    slice_threshold = nanmean(curr_im_bw(border_idx),1) + 1;
+    slice_threshold = 3*(nanmean(curr_im_bw(border_idx),1)+1);
     
     curr_histology_thresh = +(curr_im_bw > slice_threshold);
+    
+    % Resize atlas outline to approximately match histology, affine-align
+    resize_factor = min(size(curr_histology_thresh)./size(curr_av_thresh));
+    curr_av_thresh_resize = imresize(curr_av_thresh,resize_factor,'nearest');
     
     [optimizer, metric] = imregconfig('monomodal');
     optimizer.MaximumIterations = 200;
@@ -48,11 +52,17 @@ for curr_slice = 1:length(slice_im)
     optimizer.GradientMagnitudeTolerance = 1e-5;
     optimizer.RelaxationFactor = 1e-1;
     
-    tformEstimate_affine = imregtform(curr_av_thresh,curr_histology_thresh,'affine',optimizer,metric);
+    tformEstimate_affine_resized = imregtform(curr_av_thresh_resize,curr_histology_thresh,'affine',optimizer,metric);
+    
+    % Put the resizing factor into the affine matrix
+    tformEstimate_affine = tformEstimate_affine_resized;
+    tformEstimate_affine.T(1,1) = tformEstimate_affine_resized.T(1,1)*resize_factor;
+    tformEstimate_affine.T(2,2) = tformEstimate_affine_resized.T(2,2)*resize_factor;
+    
+    % Store the affine matrix and plot the transform
     atlas2histology_tform{curr_slice} = tformEstimate_affine.T;
     
-    curr_av_aligned = imwarp(curr_av,tformEstimate_affine,'nearest','Outputview',imref2d(size(curr_histology)));
-    
+    curr_av_aligned = imwarp(curr_av,tformEstimate_affine,'nearest','Outputview',imref2d(size(curr_histology)));   
     av_aligned_boundaries = round(conv2(curr_av_aligned,ones(3)./9,'same')) ~= curr_av_aligned;
     
     % (recreate figure if closed)
