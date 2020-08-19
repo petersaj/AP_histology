@@ -124,6 +124,7 @@ gui_data.multiunit_ax = multiunit_ax;
 
 gui_data.probe_areas_ax = probe_areas_ax;
 gui_data.probe_areas_ax_ylim = ylim(probe_areas_ax);
+gui_data.probe_trajectory_depths = probe_trajectory_depths;
 
 % Upload gui data
 guidata(gui_fig,gui_data);
@@ -169,9 +170,9 @@ switch eventdata.Key
             probe_ccf = gui_data.probe_ccf;
             
             % Get the probe depths corresponding to the trajectory areas
-            % (*10 = in um)
-            probe_depths = ([1:length(probe_ccf(gui_data.use_probe).trajectory_areas)]'-1 - ...
-                round(gui_data.probe_areas_ax_ylim(1)/10))*10;
+            probe_depths = gui_data.probe_trajectory_depths - ...
+                gui_data.probe_areas_ax_ylim(1);         
+            
             probe_ccf(gui_data.use_probe).probe_depths = probe_depths;
             
             % Save the appended probe_ccf structure
