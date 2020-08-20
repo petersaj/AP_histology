@@ -186,6 +186,11 @@ switch eventdata.Key
                 xyz = bsxfun(@minus,probe_ccf(curr_probe).points,r0);
                 [~,~,V] = svd(xyz,0);
                 histology_probe_direction = V(:,1);
+                % (make sure the direction goes down in DV - flip if it's going up)
+                if histology_probe_direction(2) < 0
+                    histology_probe_direction = -histology_probe_direction;
+                end
+                
                 line_eval = [-1000,1000];
                 probe_fit_line = bsxfun(@plus,bsxfun(@times,line_eval',histology_probe_direction'),r0)';
                 

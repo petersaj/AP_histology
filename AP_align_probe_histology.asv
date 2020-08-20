@@ -101,8 +101,7 @@ trajectory_area_labels = st.safe_name(probe_ccf(use_probe).trajectory_areas(traj
 image([],probe_trajectory_depths,probe_ccf(use_probe).trajectory_areas);
 colormap(probe_areas_ax,cmap);
 caxis([1,size(cmap,1)])
-set(probe_areas_ax,'YTick',trajectory_area_centers(area_dv_sort_idx), ...
-    'YTickLabels',trajectory_area_labels(area_dv_sort_idx));
+set(probe_areas_ax,'YTick',trajectory_area_centers,'YTickLabels',trajectory_area_labels);
 set(probe_areas_ax,'XTick',[]);
 set(probe_areas_ax,'YAxisLocation','right')
 
