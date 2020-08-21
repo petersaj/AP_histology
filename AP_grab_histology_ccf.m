@@ -33,10 +33,12 @@ title(gui_data.histology_ax,'No saved atlas position');
 % Set up 3D atlas axis
 gui_data.atlas_ax = subplot(1,2,2, ...
     'YDir','reverse','ZDir','reverse','color','k', ...
-    'XTick',[],'YTick',[],'ZTick',[]);
+    'XTick',[1,size(av,1)],'XTickLabel',{'Front','Back'}, ...
+    'YTick',[1,size(av,3)],'YTickLabel',{'Right','Left'}, ...
+    'ZTick',[1,size(av,2)],'ZTickLabel',{'Top','Bottom'});
 hold on
 axis vis3d equal manual
-view([-90,0]);
+view([90,0]);
 [ap_max,dv_max,ml_max] = size(tv);
 xlim([1,ap_max]);
 ylim([1,ml_max]);
