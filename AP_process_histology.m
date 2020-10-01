@@ -96,6 +96,12 @@ if ~im_is_rgb
         cmax = signal_high;
         caxis([cmin,cmax]);
         
+        check_contrast = questdlg('Contrast ok?','Set contrast','Yes','Manual','Yes');
+        if strcmp(check_contrast,'Manual')
+            waitfor(imcontrast(gcf));
+            [cmin,cmax] = caxis;
+        end
+        
         channel_caxis(curr_channel,:) = [cmin,cmax];
         
         channel_color{curr_channel} = questdlg('What color should this be?', ...
