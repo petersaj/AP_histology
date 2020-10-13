@@ -3,13 +3,13 @@
 %% 1) Load CCF and set paths for slide and slice images
 
 % Load CCF atlas
-allen_atlas_path = 'C:\Users\Andrew\OneDrive for Business\Documents\Atlases\AllenCCF';
+allen_atlas_path = 'C:\Users\Andy\Documents\AllenCCF';
 tv = readNPY([allen_atlas_path filesep 'template_volume_10um.npy']);
 av = readNPY([allen_atlas_path filesep 'annotation_volume_10um_by_index.npy']);
 st = loadStructureTree([allen_atlas_path filesep 'structure_tree_safe_2017.csv']);
 
 % Set paths for histology images and directory to save slice/alignment
-im_path = 'C:\Users\Andrew\Desktop\temp_histology\anna_test';
+im_path = 'C:\Users\Andy\Desktop\AP061';
 slice_path = [im_path filesep 'slices'];
 
 %% 2) Preprocess slide images to produce slice images
@@ -44,7 +44,7 @@ AP_manual_align_histology_ccf(tv,av,st,slice_path);
 AP_view_aligned_histology(st,slice_path);
 
 % Display histology within 3D CCF
-AP_view_aligned_histology_volume(tv,av,st,slice_path,2);
+AP_view_aligned_histology_volume(tv,av,st,slice_path,1);
 
 % Get probe trajectory from histology, convert to CCF coordinates
 AP_get_probe_histology(tv,av,st,slice_path);

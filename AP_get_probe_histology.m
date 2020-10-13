@@ -275,7 +275,7 @@ function plot_probe(gui_data,probe_ccf)
 figure('Name','Probe trajectories');
 axes_atlas = axes;
 [~, brain_outline] = plotBrainGrid([],axes_atlas);
-set(axes_atlas,'YDir','reverse','ZDir','reverse');
+set(axes_atlas,'ZDir','reverse');
 hold(axes_atlas,'on');
 axis vis3d equal off manual
 view([-30,25]);

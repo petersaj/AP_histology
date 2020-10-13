@@ -58,7 +58,7 @@ gui_fig = figure;
 % Set up 3D plot for volume viewing
 axes_atlas = axes;
 [~, brain_outline] = plotBrainGrid([],axes_atlas);
-set(axes_atlas,'YDir','reverse','ZDir','reverse');
+set(axes_atlas,'ZDir','reverse');
 hold(axes_atlas,'on');
 axis vis3d equal off manual
 view([-30,25]);
