@@ -150,7 +150,7 @@ end
 
 % Set slice_images false by default
 if ~exist('slice_images','var')
-    slice_images = false;
+   slice_images = false;
 end
 
 if ~slice_images
@@ -183,12 +183,15 @@ elseif slice_images
         mkdir(save_dir)
     end
     
-    % Write all slice images to separate files
-    for curr_im = 1:length(im_rgb)
-        curr_fn = [save_dir filesep num2str(curr_im) '.tif'];
-        imwrite(im_rgb{curr_im},curr_fn,'tif');
-    end
+    % Concatenate all slice images
+    slice_rgb_cat = vertcat(slice_data.slice_rgb{:});
     
+    % Write all slice images to separate files
+    for curr_im = 1:length(slice_rgb_cat)
+        curr_fn = [save_dir filesep num2str(curr_im) '.tif'];
+        imwrite(slice_rgb_cat{curr_im},curr_fn,'tif');
+    end
+
     
 end
 
