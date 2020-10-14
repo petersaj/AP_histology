@@ -26,7 +26,7 @@ resize_factor = []; % (slides ome.tiff: auto-resize ~CCF size 10um/px)
 
 % Set slide or slice images
 slice_images = false; % (images are slides - extract individual slices)
-slice_images = true; % (images are already individual slices)
+% slice_images = true; % (images are already individual slices)
 
 % Preprocess images
 AP_process_histology(im_path,resize_factor);
