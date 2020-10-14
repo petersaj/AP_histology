@@ -20,16 +20,20 @@ slice_path = [im_path filesep 'slices'];
 % available in metadata then automatically scales to CCF resolution,
 % otherwise user can specify the resize factor as a second argument)
 
-% Set resize factor
-resize_factor = []; % (slides ome.tiff: auto-resize ~CCF size 10um/px)
-% resize_factor = 0.5; % (slides tiff: resize factor)
+% (Slides - OME.TIFF: auto-resize)
+resize_factor = []; % (slides ome.tiff: auto-resize)
+resize_factor = 0.163 % (slides tiff: resize um/px
 
-% Set slide or slice images
-slice_images = false; % (images are slides - extract individual slices)
-slice_images = true; % (images are already individual slices)
+AP_process_histology(im_path,resize factor);
 
-% Preprocess images
-AP_process_histology(im_path,resize_factor);
+% (Slides - tiff: choose resize factor)
+% resize_factor = 1/6.135; % (Old scope: 1.63 um/px)
+% AP_process_histology(im_path,resize_factor);
+
+% % (Slices - tiff: no slice selection step)
+% slice_images = true;
+% resize_factor = 1/2;
+% AP_process_histology(im_path,resize_factor,slice_images);
 
 % (optional) Rotate, center, pad, flip slice images
 AP_rotate_histology(slice_path);
