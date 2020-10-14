@@ -29,7 +29,7 @@ slice_images = false; % (images are slides - extract individual slices)
 % slice_images = true; % (images are already individual slices)
 
 % Preprocess images
-AP_process_histology(im_path,resize_factor);
+AP_process_histology(im_path,resize_factor,slice_images);
 
 % (optional) Rotate, center, pad, flip slice images
 AP_rotate_histology(slice_path);
