@@ -34,7 +34,7 @@ im_is_rgb = strcmp(im_info(1).PhotometricInterpretation,'RGB');
 if exist('resize_factor','var') && ~isempty(resize_factor)
     % (resize_factor already set by user)
     
-elseif ~exist('resize_factor','var') && ~isempty(im_um)
+elseif (~exist('resize_factor','var') || isempty(resize_factor)) && ~isempty(im_um)
     im_um_x = str2num(im_um{1}{1});
     im_um_y = str2num(im_um{1}{2});
     
@@ -149,7 +149,7 @@ elseif im_is_rgb
 end
 
 % Set slice_images false by default
-if ~exist('slice_images','var')
+if ~exist('slice_images','var') || isempty(slice_images)
     slice_images = false;
 end
 
