@@ -3,6 +3,8 @@ This pipeline aligns histology images to the Allen CCF.
 Dependency repository: https://github.com/cortex-lab/allenCCF
 (and Allen CCF atlas)
 
+This was made with inspiration from SHARP-Track by Philip Shamash (https://github.com/cortex-lab/allenCCF, https://www.biorxiv.org/content/10.1101/447995v1). It mostly serves the same goals, but has different interfaces (most notably in the histology/CCF matching step) and saves some extra information (like the full CCF coordinates for each CCF slice), which was easier to build new compared to modifying the old.
+
 All functions are listed in the 'demo_histology_pipeline.m' file.
 
 ## Histology preprocessing
