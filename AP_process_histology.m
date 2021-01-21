@@ -89,7 +89,7 @@ if ~im_is_rgb
         bg_signal_min = find(im_hist_deriv(bg_down:end) > 0,1) + bg_down;
         % The signal maximum is < 1% median value
         [~,bg_median_rel] = max(im_hist_smoothed(bg_signal_min:end));
-        signal_median = bg_median_rel + bg_signal_min;
+        signal_median = bg_median_rel + bg_signal_min - 1;
         signal_high_cutoff = im_hist_smoothed(signal_median)*0.01;
         signal_high_rel = find(im_hist_smoothed(signal_median:end) < signal_high_cutoff,1);
         signal_high = signal_high_rel + signal_median;
@@ -184,10 +184,12 @@ elseif slice_images
     end
     
     % Write all slice images to separate files
+    disp('Saving slice images...');
     for curr_im = 1:length(im_rgb)
         curr_fn = [save_dir filesep num2str(curr_im) '.tif'];
         imwrite(im_rgb{curr_im},curr_fn,'tif');
     end
+    disp('Done.');
     
     
 end
