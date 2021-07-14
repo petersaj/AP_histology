@@ -32,13 +32,9 @@ for curr_slice = 1:length(slice_im)
     curr_av_thresh = +(curr_av > 1);
     
     % Estimate slice white threshold
-    % (do this by estimating background from border pixels)    
-    curr_im_bw = nanmean(curr_histology,3);
-    
-    border_px = 10;
-    border_idx = true(size(curr_im_bw));
-    border_idx(border_px+1:end-border_px,border_px+1:end-border_px) = false;
-    slice_threshold = 3*(nanmean(curr_im_bw(border_idx),1)+1);
+    % (get median nonzero value, halve)    
+    curr_im_bw = nanmean(curr_histology,3); 
+    slice_threshold = prctile(curr_im_bw(curr_im_bw ~= 0),50)/2; 
     
     curr_histology_thresh = +(curr_im_bw > slice_threshold);
     
@@ -52,7 +48,9 @@ for curr_slice = 1:length(slice_im)
     optimizer.GradientMagnitudeTolerance = 1e-5;
     optimizer.RelaxationFactor = 1e-1;
     
-    tformEstimate_affine_resized = imregtform(curr_av_thresh_resize,curr_histology_thresh,'affine',optimizer,metric);
+    tformEstimate_affine_resized = ...
+        imregtform(curr_av_thresh_resize,curr_histology_thresh, ...
+        'affine',optimizer,metric,'PyramidLevels',3);
     
     % Put the resizing factor into the affine matrix
     tformEstimate_affine = tformEstimate_affine_resized;
@@ -63,8 +61,10 @@ for curr_slice = 1:length(slice_im)
     atlas2histology_tform{curr_slice} = tformEstimate_affine.T;
     
     curr_av_aligned = imwarp(curr_av,tformEstimate_affine,'nearest','Outputview',imref2d(size(curr_histology)));   
-    av_aligned_boundaries = round(conv2(curr_av_aligned,ones(3)./9,'same')) ~= curr_av_aligned;
     
+    curr_histology_thresh_boundaries = imdilate(curr_histology_thresh,ones(9))-curr_histology_thresh;
+    av_aligned_boundaries = round(conv2(curr_av_aligned,ones(3)./9,'same')) ~= curr_av_aligned;
+
     % (recreate figure if closed)
     if ~isvalid(fig_last_aligned)
         fig_last_aligned = figure;
@@ -74,7 +74,9 @@ for curr_slice = 1:length(slice_im)
     end
     figure(fig_last_aligned);
     imshow(curr_histology,'Parent',ax_last_aligned); hold on
-    imagesc(av_aligned_boundaries,'Parent',ax_last_aligned,'AlphaData',av_aligned_boundaries*0.3);
+    imagesc(padarray(curr_histology_thresh_boundaries,[0,0,2],0,'post'), ...
+        'Parent',ax_last_aligned,'AlphaData',curr_histology_thresh_boundaries*1);
+    imagesc(av_aligned_boundaries,'Parent',ax_last_aligned,'AlphaData',av_aligned_boundaries*1);
     colormap(gray);
     title(['Aligning slices ' num2str(curr_slice) '/' num2str(length(slice_im)) '...']);
     hold off;

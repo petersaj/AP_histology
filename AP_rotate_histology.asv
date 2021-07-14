@@ -34,23 +34,25 @@ for curr_im = 1:length(slice_im)
 end
 close(rotation_fig);
 
+% NOTE FOR FUTURE: make target angle either vert or horiz for whatever's
+% closest to the average reference? then switch dx vs dy below
+target_angle = 0;
+target_position = round(slice_size_max(2)./2);
+
 % Get angle for all axes
 align_angle = squeeze(atan2d(diff(align_axis(:,1,:),[],1),diff(align_axis(:,2,:),[],1)));
 align_center = squeeze(nanmean(align_axis,1));
 
 % Set target angle as the nearest multiple of 90
-target_angle = round(nanmean(align_angle)/90)*90;
-
-% Set target position as the average center of the reference lines
-target_position = nanmean(align_center,2);
+target_angle = nan
 
 im_aligned = zeros(size(slice_im_pad),class(slice_im_pad));
 
 for curr_im = 1:length(slice_im)
     
     angle_diff = target_angle - align_angle(curr_im);
-    x_diff = target_position(2) - align_center(2,curr_im);
-    y_diff = target_position(1) - align_center(1,curr_im);
+    x_diff = target_position - align_center(1,curr_im);
+    y_diff = 0;
     
     im_aligned(:,:,:,curr_im) = ...
         imrotate(imtranslate(slice_im_pad(:,:,:,curr_im), ...
