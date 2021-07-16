@@ -3,13 +3,13 @@
 %% 1) Load CCF and set paths for slide and slice images
 
 % Load CCF atlas
-allen_atlas_path = 'path to CCF atlas goes here';
+allen_atlas_path = 'D:\Data\AllenCCF';
 tv = readNPY([allen_atlas_path filesep 'template_volume_10um.npy']);
 av = readNPY([allen_atlas_path filesep 'annotation_volume_10um_by_index.npy']);
 st = loadStructureTree([allen_atlas_path filesep 'structure_tree_safe_2017.csv']);
 
 % Set paths for histology images and directory to save slice/alignment
-im_path = 'path to folder with images goes here';
+im_path = 'D:\Data\Raw\Histology\MA3\processed';
 slice_path = [im_path filesep 'slices'];
 
 %% 2) Preprocess slide images to produce slice images
@@ -22,7 +22,7 @@ slice_path = [im_path filesep 'slices'];
 
 % Set resize factor
 % resize_factor = []; % (slides ome.tiff: auto-resize ~CCF size 10um/px)
-resize_factor = 1; % (slides tiff: resize factor)
+resize_factor = 0.33; % (slides tiff: resize factor)
 
 % Set slide or slice images
 % slice_images = false; % (images are slides - extract individual slices)
