@@ -50,7 +50,7 @@ set(unit_ax,'FontSize',12)
 ylabel('Depth (\mum)');
 
 % Plot multiunit correlation
-multiunit_ax = subplot('Position',[0.2,0.1,0.3,0.8]);
+multiunit_ax = subplot('Position',[0.2,0.1,0.3,0.8],'YDir','reverse');
 imagesc(depth_group_centers,depth_group_centers,mua_corr);
 caxis([0,max(mua_corr(mua_corr ~= 1))]); colormap(hot);
 ylim([0,max_depths]);
@@ -61,7 +61,7 @@ xlabel(multiunit_ax,'Multiunit depth');
 
 % Plot LFP median-subtracted correlation
 lfp_moving_median = 10; % channels to take sliding median
-lfp_ax = subplot('Position',[0.5,0.1,0.3,0.8]);
+lfp_ax = subplot('Position',[0.5,0.1,0.3,0.8],'YDir','reverse');
 imagesc(lfp_channel_positions,lfp_channel_positions, ...
     corrcoef((movmedian(zscore(double(lfp),[],2),lfp_moving_median,1) - ...
     nanmedian(zscore(double(lfp),[],2),1))'));
@@ -73,6 +73,9 @@ set(lfp_ax,'FontSize',12)
 caxis([-1,1])
 xlabel(lfp_ax,'Depth (\mum)'); 
 colormap(lfp_ax,brewermap([],'*RdBu'));
+
+% Link all y-axes
+linkaxes([unit_ax,multiunit_ax,lfp_ax],'y');
 
 % Plot probe areas (interactive)
 % (load the colormap - located in the repository, find by associated fcn)
