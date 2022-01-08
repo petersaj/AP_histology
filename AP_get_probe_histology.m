@@ -61,7 +61,10 @@ gui_data.histology_im_h = image(gui_data.slice_im{1}, ...
 gui_data.histology_ax_title = title(gui_data.histology_ax,'','FontSize',14);
 
 % Initialize probe points
-gui_data.probe_color = max(jet(gui_data.n_probes)-0.2,0);
+lines_colormap = lines(8);
+probe_colormap = [lines_colormap;lines_colormap(:,[2,3,1]);lines_colormap(:,[3,1,2])];
+
+gui_data.probe_color = probe_colormap(1:gui_data.n_probes,:);
 gui_data.probe_points_histology = cell(length(gui_data.slice_im),gui_data.n_probes);
 gui_data.probe_lines = gobjects(gui_data.n_probes,1);
 
@@ -121,8 +124,14 @@ switch eventdata.Key
         end
         gui_data.probe_points_histology{gui_data.curr_slice,curr_probe} = ...
             curr_line.getPosition;
-        set(gui_data.histology_ax_title,'String', ...
-            ['Arrows to move, Number to draw probe [' num2str(1:gui_data.n_probes) '], Esc to save/quit']);
+        if gui_data.n_probes < 10
+            set(gui_data.histology_ax_title,'String', ...
+                ['Arrows to move, Number to draw probe [1:' num2str(gui_data.n_probes) '], Esc to save/quit']);
+        else
+            set(gui_data.histology_ax_title,'String', ...
+                {['Arrows to move, Number to draw probe [1:' num2str(gui_data.n_probes) '], Esc to save/quit'], ...
+                ['(0 = 10, shift = +10)']});           
+        end
         
         % Delete movable line, draw line object
         curr_line.delete;
@@ -272,9 +281,15 @@ for curr_probe = find(~cellfun(@isempty,gui_data.probe_points_histology(gui_data
         'linewidth',3,'color',gui_data.probe_color(curr_probe,:));
 end
 
-set(gui_data.histology_ax_title,'String', ...
-            ['Arrows to move, Number to draw probe [' num2str(1:gui_data.n_probes) '], Esc to save/quit']);
-        
+if gui_data.n_probes < 10
+    set(gui_data.histology_ax_title,'String', ...
+        ['Arrows to move, Number to draw probe [1:' num2str(gui_data.n_probes) '], Esc to save/quit']);
+else
+    set(gui_data.histology_ax_title,'String', ...
+        {['Arrows to move, Number to draw probe [1:' num2str(gui_data.n_probes) '], Esc to save/quit'], ...
+        ['(0 = 10, shift = +10)']});
+end
+
 % Upload gui data
 guidata(gui_fig, gui_data);
 
