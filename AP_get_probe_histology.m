@@ -61,7 +61,7 @@ gui_data.histology_im_h = image(gui_data.slice_im{1}, ...
 gui_data.histology_ax_title = title(gui_data.histology_ax,'','FontSize',14);
 
 % Initialize probe points
-gui_data.probe_color = lines(gui_data.n_probes);
+gui_data.probe_color = max(jet(gui_data.n_probes)-0.2,0);
 gui_data.probe_points_histology = cell(length(gui_data.slice_im),gui_data.n_probes);
 gui_data.probe_lines = gobjects(gui_data.n_probes,1);
 
@@ -93,15 +93,26 @@ switch eventdata.Key
         update_slice(gui_fig);
         
     % Number: add coordinates for the numbered probe
-    case [cellfun(@num2str,num2cell(1:9),'uni',false),cellfun(@(x) ['numpad' num2str(x)],num2cell(1:9),'uni',false)]
+    case [cellfun(@num2str,num2cell(0:9),'uni',false),cellfun(@(x) ['numpad' num2str(x)],num2cell(1:9),'uni',false)]
+                
         curr_probe = str2num(eventdata.Key(end));
+        
+        % 0 key: probe 10
+        if curr_probe == 0
+            curr_probe = 10;
+        end
+        
+        % Shift key: +10
+        if any(strcmp(eventdata.Modifier,'shift'))
+            curr_probe = curr_probe + 10;
+        end
         
         if curr_probe > gui_data.n_probes
            disp(['Probe ' eventdata.Key ' selected, only ' num2str(gui_data.n_probes) ' available']);
            return
         end
         
-        set(gui_data.histology_ax_title,'String',['Draw probe ' eventdata.Key]);
+        set(gui_data.histology_ax_title,'String',['Draw probe ' num2str(curr_probe)]);
         curr_line = imline;
         % If the line is just a click, don't include
         curr_line_length = sqrt(sum(abs(diff(curr_line.getPosition,[],1)).^2));

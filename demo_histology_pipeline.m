@@ -68,6 +68,16 @@ AP_align_probe_histology(st,slice_path, ...
 % (not worth it at the moment, each slice is 200 MB)
 % AP_grab_fullsize_histology_slices(im_path)
 
+% Convert points in histology images to CCF coordinates
+ccf_points = AP_histology2ccf(histology_points,slice_path);
+% Concatenate points and round to nearest integer coordinate
+ccf_points_cat = round(cell2mat(ccf_points));
+% Get indicies from subscripts
+ccf_points_idx = sub2ind(size(av),ccf_points_cat(:,1),ccf_points_cat(:,2),ccf_points_cat(:,3));
+% Find annotated volume (AV) values at points
+ccf_points_av = av(ccf_points_idx);
+% Get areas from the structure tree (ST) at given AV values
+ccf_points_areas = st(ccf_points_areas,:).safe_name;
 
 
 
