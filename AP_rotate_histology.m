@@ -36,7 +36,7 @@ close(rotation_fig);
 
 % Get angle for all axes
 align_angle = squeeze(atan2d(diff(align_axis(:,1,:),[],1),diff(align_axis(:,2,:),[],1)));
-align_center = squeeze(nanmean(align_axis,1));
+align_center = permute(nanmean(align_axis,1),[2,3,1]);
 
 % Set target angle as the nearest multiple of 90
 target_angle = round(nanmean(align_angle)/90)*90;
