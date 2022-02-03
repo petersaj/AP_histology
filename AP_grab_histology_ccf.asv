@@ -334,7 +334,7 @@ av_slice(curr_slice_isbrain) = gui_data.av(grab_pix_idx);
 % Update slice position title
 plane_offset_mm = plane_offset/100; % CCF = 10um voxels
 set(gui_data.atlas_title,'string', ...
-    sprintf('Slice position: %.2f mm',plane_offset_mm));
+    sprintf('Slice position: %.0fmm',plane_offset));
 
 end
 
