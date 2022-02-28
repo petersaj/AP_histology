@@ -61,7 +61,7 @@ gui_data.histology_im_h = image(gui_data.slice_im{1}, ...
 gui_data.histology_ax_title = title(gui_data.histology_ax,'','FontSize',14);
 
 % Initialize probe points
-lines_colormap = lines(8);
+lines_colormap = lines(7);
 probe_colormap = [lines_colormap;lines_colormap(:,[2,3,1]);lines_colormap(:,[3,1,2])];
 
 gui_data.probe_color = probe_colormap(1:gui_data.n_probes,:);
