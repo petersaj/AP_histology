@@ -47,6 +47,19 @@ colormap(gui_data.atlas_ax,'gray');
 caxis([0,400]);
 gui_data.atlas_title = title(sprintf('Slice position: %d',0));
 
+% Create CCF colormap
+% (copied from cortex-lab/allenCCF/setup_utils
+ccf_color_hex = st.color_hex_triplet;
+ccf_color_hex(cellfun(@numel,ccf_color_hex)==5) = {'019399'}; % special case where leading zero was evidently dropped
+ccf_cmap_c1 = cellfun(@(x)hex2dec(x(1:2)), ccf_color_hex, 'uni', false);
+ccf_cmap_c2 = cellfun(@(x)hex2dec(x(3:4)), ccf_color_hex, 'uni', false);
+ccf_cmap_c3 = cellfun(@(x)hex2dec(x(5:6)), ccf_color_hex, 'uni', false);
+gui_data.ccf_cmap = ...
+    horzcat(vertcat(ccf_cmap_c1{:}),vertcat(ccf_cmap_c2{:}),vertcat(ccf_cmap_c3{:}))./255;
+
+% Set mode for atlas view (can be either TV, AV, or TV-AV)
+gui_data.atlas_mode = 'TV';
+
 % Create slice object and first slice point
 gui_data.atlas_slice_plot = surface(gui_data.atlas_ax,'EdgeColor','none'); % Slice on 3D atlas
 gui_data.atlas_slice_point = camtarget;
@@ -68,6 +81,7 @@ msgbox( ...
     {'\fontsize{12}' ...
     '\bf Controls: \rm' ...
     '1,2 : move histology slice' ...
+    'm : change atlas display mode (TV/AV/TV-AV overlay)' ...
     'Arrow keys: rotate CCF atlas', ...
     'Scroll wheel: move CCF slice in/out of plane', ...
     'Enter: set current histology and CCF slice pair', ...
@@ -109,7 +123,15 @@ switch eventdata.Key
             min(gui_data.curr_histology_slice + 1,length(gui_data.slice_im));
         guidata(gui_fig,gui_data);
         update_histology_slice(gui_fig);
-        
+
+    % M key: switch atlas display mode
+    case 'm'
+        atlas_slice_modes = {'TV','AV','TV-AV'};
+        curr_atlas_mode_idx = strcmp(gui_data.atlas_mode,atlas_slice_modes);
+        gui_data.atlas_mode = atlas_slice_modes{circshift(curr_atlas_mode_idx,[0,1])};
+        guidata(gui_fig,gui_data);
+        update_atlas_slice(gui_fig);
+
     % Enter: save slice coordinates
     case 'return'        
         % Store camera vector and point
@@ -250,8 +272,21 @@ gui_data = guidata(gui_fig);
 % Get slice (larger spacing for faster pulling)
 [tv_slice,av_slice,plane_ap,plane_ml,plane_dv] = grab_atlas_slice(gui_data,3);
 
-% Update the slice display
-set(gui_data.atlas_slice_plot,'XData',plane_ap,'YData',plane_ml,'ZData',plane_dv,'CData',tv_slice);
+% Update the slice display (depending on display mode)
+switch gui_data.atlas_mode
+    case 'TV'
+        atlas_slice = tv_slice;
+        colormap(gray);caxis([0,516]);
+    case 'AV'
+        av_boundaries = round(conv2(av_slice,ones(2)./4,'same')) ~= av_slice;
+        atlas_slice = imoverlay(mat2gray(tv_slice,[0,516]),av_boundaries,'r');
+        caxis([0,1]);
+    case 'TV-AV'
+        atlas_slice = av_slice;
+        colormap(gui_data.ccf_cmap)
+        caxis([1,size(gui_data.ccf_cmap,1)])
+end
+set(gui_data.atlas_slice_plot,'XData',plane_ap,'YData',plane_ml,'ZData',plane_dv,'CData',atlas_slice);
 
 % Upload gui_data
 guidata(gui_fig, gui_data);
