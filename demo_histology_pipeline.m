@@ -6,7 +6,7 @@
 allen_atlas_path = 'path to CCF atlas goes here';
 tv = readNPY([allen_atlas_path filesep 'template_volume_10um.npy']);
 av = readNPY([allen_atlas_path filesep 'annotation_volume_10um_by_index.npy']);
-st = loadStructureTree([allen_atlas_path filesep 'structure_tree_safe_2017.csv']);
+st = AP_loadStructureTree([allen_atlas_path filesep 'structure_tree_safe_2017.csv']);
 
 % Set paths for histology images and directory to save slice/alignment
 im_path = 'path to folder with images goes here';
