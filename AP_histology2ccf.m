@@ -1,4 +1,6 @@
 function ccf_points = AP_histology2ccf(histology_points,slice_im_path)
+% ccf_points = AP_histology2ccf(histology_points,slice_im_path)
+% 
 % Transform coordinates on histology slices to CCF location
 %
 % Inputs: 
