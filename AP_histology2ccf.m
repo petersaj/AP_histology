@@ -9,6 +9,8 @@ function ccf_points = AP_histology2ccf(histology_points,slice_im_path)
 % {[100,200]},{[]} will convert the point x = 100, y = 200 on the first
 % slide into CCF coordinates
 %
+% slice_im_path - path with aligned slices to load transform from
+%
 % Outputs
 % ccf_points = cell array with CCF coordinates corresponding to
 % histology_points (note: in native CCF order [AP/DV/ML])
