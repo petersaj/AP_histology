@@ -47,26 +47,49 @@ for curr_slice = 1:length(slice_im)
     optimizer.MaximumStepLength = 1e-2;
     optimizer.GradientMagnitudeTolerance = 1e-5;
     optimizer.RelaxationFactor = 1e-1;
+    
+    tformEstimate_affine_resized = ...
+        imregtform(curr_av_thresh_resize,curr_histology_thresh, ...
+        'affine',optimizer,metric,'PyramidLevels',3);
 
-    % Do alignment on downsampled sillhouettes (faster and more accurate)
+    %%%%%%%% TESTING: MAKE BOTH SMALL
+
     downsample_factor = 10;
+
+    a = imresize(curr_av_thresh_resize,1/downsample_factor,'nearest');
+    b = imresize(curr_histology_thresh,1/downsample_factor,'nearest');
 
     tformEstimate_affine_resized = ...
         imregtform( ...
-        imresize(curr_av_thresh_resize,1/downsample_factor,'nearest'), ...
-        imresize(curr_histology_thresh,1/downsample_factor,'nearest'), ...
+        a, ...
+        b, ...
         'affine',optimizer,metric,'PyramidLevels',3);
 
-    % Set final transform (scale to histology, downscale, affine, upscale)
-    scale_match = eye(3).*[repmat(resize_factor,2,1);1];
-    scale_align_down = eye(3).*[repmat(1/downsample_factor,2,1);1];
-    scale_align_up = eye(3).*[repmat(downsample_factor,2,1);1];
+    m = imwarp(a,tformEstimate_affine_resized,'nearest','Outputview',imref2d(size(b)));
+
+
+    scale_match = eye(3).*([1;1;0].*resize_factor);scale_match(end)=1;
+    scale_align_down = eye(3).*([1;1;0].*(1/downsample_factor));scale_align_down(end)=1;
+    scale_align_up = eye(3).*([1;1;0].*(downsample_factor));scale_align_up(end)=1;
 
     tformEstimate_affine = tformEstimate_affine_resized;
-    tformEstimate_affine.T = scale_match*scale_align_down* ...
-        tformEstimate_affine_resized.T*scale_align_up;
+    tformEstimate_affine.T = scale_match*scale_align_down*tformEstimate_affine_resized.T*scale_align_up;
+
+    % Put the resizing factor into the affine matrix
+    tformEstimate_affine = tformEstimate_affine_resized;
+    tformEstimate_affine.T(1,1) = tformEstimate_affine_resized.T(1,1)*resize_factor;
+    tformEstimate_affine.T(2,2) = tformEstimate_affine_resized.T(2,2)*resize_factor;
 
     curr_av_aligned = imwarp(curr_av,tformEstimate_affine,'nearest','Outputview',imref2d(size(curr_histology)));   
+
+    %%%%%%%%%%%%%%%%
+
+
+    
+    % Put the resizing factor into the affine matrix
+    tformEstimate_affine = tformEstimate_affine_resized;
+    tformEstimate_affine.T(1,1) = tformEstimate_affine_resized.T(1,1)*resize_factor;
+    tformEstimate_affine.T(2,2) = tformEstimate_affine_resized.T(2,2)*resize_factor;
     
     % Store the affine matrix and plot the transform
     atlas2histology_tform{curr_slice} = tformEstimate_affine.T;
