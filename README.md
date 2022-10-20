@@ -1,5 +1,7 @@
 This pipeline aligns histology images to the Allen CCF.
 
+A video demonstration of this tool is available here: https://www.youtube.com/watch?v=HKm_G17Wc6g
+
 Requires 
 - the Allen CCF atlas ([download here](http://data.cortexlab.net/allenCCF/))
 - [The npy-matlab repository](http://github.com/kwikteam/npy-matlab)
