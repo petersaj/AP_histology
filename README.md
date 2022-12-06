@@ -121,6 +121,6 @@ This will plot the template depth vs spike rate (left), the multiunit correlatio
 The final useful output of this is a file/structure 'probe_ccf' which contains: 
 - probe_ccf.trajectory_coords: the 3D CCF coordinates of the probe trajectory
 - probe_ccf.trajectory_areas: the annotated CCF areas for each point
-- probe_ccf.probe_depths: the relative depth of the probe to that point (e.g. 0 is the top of the probe and ~3840 is the end)
+- probe_ccf.probe_depths: the relative depth of the probe to that point (e.g. 0 is the upper/top of the probe and ~3840 is the lower/tip of the probe)
 
 ![test image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_align_probe_histology.png)
