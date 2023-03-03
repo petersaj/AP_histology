@@ -3,7 +3,9 @@ This pipeline aligns histology images to the Allen CCF.
 A video demonstration of this tool is available here: https://www.youtube.com/watch?v=HKm_G17Wc6g
 
 Requires 
-- the Allen CCF atlas ([download here](http://data.cortexlab.net/allenCCF/))
+- Mouse: download the Allen CCF mouse atlas [download here](https://osf.io/fv7ed/) * 
+
+*(note on where these files came from: they are a re-formatted version of [the original atlas](http://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/ccf_2017/), which has been [processed with this script](https://github.com/cortex-lab/allenCCF/blob/master/setup_utils.m))
 - [The npy-matlab repository](http://github.com/kwikteam/npy-matlab)
 
 This was made with inspiration from SHARP-Track by Philip Shamash (https://github.com/cortex-lab/allenCCF, https://www.biorxiv.org/content/10.1101/447995v1). It mostly serves the same goals, but has different interfaces (most notably in the histology/CCF matching step) and saves some extra information (like the full CCF coordinates for each CCF slice), which was easier to build new compared to modifying the old.
