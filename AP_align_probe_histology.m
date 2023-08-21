@@ -13,8 +13,8 @@ probe_ccf_fn = [slice_path filesep 'probe_ccf.mat'];
 load(probe_ccf_fn);
 
 % Get normalized log spike n
-[~,~,spike_templates_reidx] = unique(spike_templates);
-norm_template_spike_n = mat2gray(log10(accumarray(spike_templates_reidx,1)+1));
+spike_templates_unique = unique(spike_templates);
+norm_template_spike_n = mat2gray(log10(accumarray(spike_templates,1)+1));
 
 % Get multiunit correlation
 n_corr_groups = 40;
@@ -41,7 +41,8 @@ gui_fig = figure('color','w','KeyPressFcn',@keypress);
 
 % Plot spike depth vs rate
 unit_ax = subplot('Position',[0.1,0.1,0.1,0.8]);
-scatter(norm_template_spike_n,template_depths,15,'k','filled');
+scatter(norm_template_spike_n(spike_templates_unique), ...
+    template_depths(spike_templates_unique),15,'k','filled');
 set(unit_ax,'YDir','reverse');
 ylim([0,max_depths]);
 xlabel('N spikes')
@@ -72,7 +73,7 @@ title('LFP power');
 set(lfp_ax,'FontSize',12)
 caxis([-1,1])
 xlabel(lfp_ax,'Depth (\mum)'); 
-colormap(lfp_ax,brewermap([],'*RdBu'));
+colormap(lfp_ax,'hot');
 
 % Link all y-axes
 linkaxes([unit_ax,multiunit_ax,lfp_ax],'y');

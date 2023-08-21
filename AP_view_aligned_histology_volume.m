@@ -70,11 +70,11 @@ zlim([-10,dv_max+10])
 
 switch channel
     case 1
-        colormap(brewermap([],'Reds'));
+        colormap(AP_colormap('WR'));
     case 2
-        colormap(brewermap([],'Greens'));
+        colormap(AP_colormap('WG'));
     case 3
-        colormap(brewermap([],'Blues'));
+        colormap(AP_colormap('WB'));
 end
 
 % Turn on rotation by default
