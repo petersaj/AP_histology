@@ -88,7 +88,7 @@ for curr_slice = 1:length(gui_data.slice_im)
     % Get thresholded image
     curr_slice_im = gui_data.atlas_aligned_histology{curr_slice}(:,:,channel);
     slice_alpha = curr_slice_im;
-    value_thresh = 100;
+    value_thresh = 25;
     
     % Draw if thresholded pixels (ignore if not)
     if any(curr_slice_im(:) > value_thresh)

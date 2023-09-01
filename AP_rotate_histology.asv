@@ -49,8 +49,8 @@ im_aligned = zeros(size(slice_im_pad),class(slice_im_pad));
 for curr_im = 1:length(slice_im)
     
     angle_diff = target_angle - align_angle(curr_im);
-    x_diff = target_position(1) - align_center(1,curr_im);
-    y_diff = target_position(2) - align_center(2,curr_im);
+    x_diff = target_position(2) - align_center(2,curr_im);
+    y_diff = target_position(1) - align_center(1,curr_im);
     
     im_aligned(:,:,:,curr_im) = ...
         imrotate(imtranslate(slice_im_pad(:,:,:,curr_im), ...
