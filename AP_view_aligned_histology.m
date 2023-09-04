@@ -138,7 +138,7 @@ function align_ccf_to_histology(gui_fig)
 gui_data = guidata(gui_fig);
 
 curr_av_slice_warp = gui_data.histology_aligned_av_slices{gui_data.curr_slice};
-av_warp_boundaries = round(conv2(curr_av_slice_warp,ones(3)./9,'same')) ~= curr_av_slice_warp;
+av_warp_boundaries = boundarymask(curr_av_slice_warp);
 
 set(gui_data.histology_aligned_atlas_boundaries, ...
     'CData',av_warp_boundaries, ...

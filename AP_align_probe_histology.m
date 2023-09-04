@@ -1,4 +1,4 @@
-function AP_align_probe_histology(st,slice_path, ...
+function gui_fig = AP_align_probe_histology(st,slice_path, ...
     spike_times,spike_templates,template_depths,use_probe)
 % AP_align_probe_histology(st,slice_path,spike_times,spike_templates,template_depths,lfp,lfp_channel_positions,use_probe)
 
@@ -58,7 +58,7 @@ ylabel('Depth (\mum)');
 % Plot multiunit correlation
 multiunit_ax = nexttile([1,3]); axis off;
 imagesc(depth_corr_bin_centers,depth_corr_bin_centers,mua_corr);
-caxis([0,max(mua_corr(mua_corr ~= 1))]); colormap(hot);
+caxis([0,0.3]); colormap(hot);
 ylim([0,max_depths]);
 set(multiunit_ax,'YTick',[]);
 title('MUA correlation');
