@@ -1,39 +1,51 @@
-function AP_manual_align_histology_ccf(tv,av,st,slice_im_path)
-% AP_manual_align_histology_ccf(tv,av,st,slice_im_path)
+function align_manual_histology_atlas(~,~,histology_toolbar_gui)
+% Part of AP_histology toolbox
 %
-% Align histology slices and matched CCF slices
-% Andy Peters (peters.andrew.j@gmail.com)
+% Manually align histology slices and matched CCF slices
 
 % Initialize guidata
 gui_data = struct;
-gui_data.tv = tv;
-gui_data.av = av;
-gui_data.st = st;
 
-% Load in slice images
-gui_data.slice_im_path = slice_im_path;
-slice_im_dir = dir([slice_im_path filesep '*.tif']);
-slice_im_fn = natsortfiles(cellfun(@(path,fn) [path filesep fn], ...
-    {slice_im_dir.folder},{slice_im_dir.name},'uni',false));
-gui_data.slice_im = cell(length(slice_im_fn),1);
-for curr_slice = 1:length(slice_im_fn)
-    gui_data.slice_im{curr_slice} = imread(slice_im_fn{curr_slice});
+% Get images (from path in toolbar GUI)
+histology_toolbar_guidata = guidata(histology_toolbar_gui);
+gui_data.save_path = histology_toolbar_guidata.save_path;
+
+slice_dir = dir(fullfile(gui_data.save_path,'*.tif'));
+slice_fn = natsortfiles(cellfun(@(path,fn) fullfile(path,fn), ...
+    {slice_dir.folder},{slice_dir.name},'uni',false));
+
+gui_data.slice_im = cell(length(slice_fn),1);
+for curr_slice = 1:length(slice_fn)
+   gui_data.slice_im{curr_slice} = imread(slice_fn{curr_slice});  
 end
 
 % Load corresponding CCF slices
-ccf_slice_fn = [slice_im_path filesep 'histology_ccf.mat'];
+ccf_slice_fn = fullfile(gui_data.save_path,'histology_ccf.mat');
 load(ccf_slice_fn);
 gui_data.histology_ccf = histology_ccf;
 
 % Load automated alignment
-auto_ccf_alignment_fn = [slice_im_path filesep 'atlas2histology_tform.mat'];
+auto_ccf_alignment_fn = fullfile(gui_data.save_path,'atlas2histology_tform.mat');
 if exist(auto_ccf_alignment_fn,'file')
     load(auto_ccf_alignment_fn);
     gui_data.histology_ccf_auto_alignment = atlas2histology_tform;
 end
 
 % Create figure, set button functions
-gui_fig = figure('KeyPressFcn',@keypress);
+screen_size_px = get(0,'screensize');
+gui_aspect_ratio = 1.7; % width/length
+gui_width_fraction = 0.6; % fraction of screen width to occupy
+gui_width_px = screen_size_px(3).*gui_width_fraction;
+gui_position = [...
+    (screen_size_px(3)-gui_width_px)/2, ... % left x
+    (screen_size_px(4)-gui_width_px/gui_aspect_ratio)/2, ... % bottom y
+    gui_width_px,gui_width_px/gui_aspect_ratio]; % width, height
+
+gui_fig = figure('KeyPressFcn',@keypress, ...
+    'Toolbar','none','Menubar','none','color','w', ...
+    'Units','pixels','Position',gui_position, ...
+    'CloseRequestFcn',@close_gui);
+
 gui_data.curr_slice = 1;
 
 % Set up axis for histology image
@@ -79,12 +91,11 @@ CreateStruct.WindowStyle = 'non-modal';
 msgbox( ...
     {'\fontsize{12}' ...
     '\bf Controls: \rm' ...
-    '1,2 : switch slice' ...
-    'click : set reference points for manual alignment (3 minimum)', ...
-    'space : toggle alignment overlay visibility', ...
-    'c : clear manually placed points', ...
-    's : save', ...
-    'Escape: save and close'}, ...
+    'Left/right: switch slice' ...
+    'click: set reference points for manual alignment (3 minimum)', ...
+    'space: toggle alignment overlay visibility', ...
+    'c: clear reference points', ...
+    's: save'}, ...
     'Controls',CreateStruct);
 
 end
@@ -97,26 +108,26 @@ gui_data = guidata(gui_fig);
 
 switch eventdata.Key
     
-    % 1/2: move slice
-    case '1'
+    % left/right arrows: move slice
+    case 'leftarrow'
         gui_data.curr_slice = max(gui_data.curr_slice - 1,1);
         guidata(gui_fig,gui_data);
         update_slice(gui_fig);
         
-    case '2'
+    case 'rightarrow'
         gui_data.curr_slice = ...
             min(gui_data.curr_slice + 1,length(gui_data.slice_im));
         guidata(gui_fig,gui_data);
         update_slice(gui_fig);
         
-    % O: toggle overlay visibility
+    % space: toggle overlay visibility
     case 'space'
         curr_visibility = ...
             get(gui_data.histology_aligned_atlas_boundaries,'Visible');
         set(gui_data.histology_aligned_atlas_boundaries,'Visible', ...
             cell2mat(setdiff({'on','off'},curr_visibility)))
         
-    % C: clear current points
+    % c: clear current points
     case 'c'
         gui_data.histology_control_points{gui_data.curr_slice} = zeros(0,2);
         gui_data.atlas_control_points{gui_data.curr_slice} = zeros(0,2);
@@ -124,27 +135,13 @@ switch eventdata.Key
         guidata(gui_fig,gui_data);
         update_slice(gui_fig);
         
-    % S: save
+    % s: save
     case 's'
         atlas2histology_tform = ...
             gui_data.histology_ccf_manual_alignment;
-        save_fn = [gui_data.slice_im_path filesep 'atlas2histology_tform.mat'];
+        save_fn = fullfile(gui_data.save_path,'atlas2histology_tform.mat');
         save(save_fn,'atlas2histology_tform');
         disp(['Saved ' save_fn]);
-        
-    % Escape: save and exit
-    case 'escape'
-        opts.Default = 'Yes';
-        opts.Interpreter = 'tex';
-        user_confirm = questdlg('\fontsize{15} Save and quit?','Confirm exit',opts);
-        if strcmp(user_confirm,'Yes')            
-            atlas2histology_tform = ...
-                gui_data.histology_ccf_manual_alignment;
-            save_fn = [gui_data.slice_im_path filesep 'atlas2histology_tform.mat'];
-            save(save_fn,'atlas2histology_tform');
-            disp(['Saved ' save_fn]);
-            close(gui_fig);            
-        end
         
 end
 
@@ -297,6 +294,33 @@ align_ccf_to_histology(gui_fig)
 
 end
 
+function close_gui(gui_fig,~)
+
+% Get guidata
+gui_data = guidata(gui_fig);
+
+opts.Default = 'Yes';
+opts.Interpreter = 'tex';
+user_confirm = questdlg('\fontsize{14} Save?','Confirm exit',opts);
+switch user_confirm
+    case 'Yes'
+        % Save and close
+        atlas2histology_tform = ...
+            gui_data.histology_ccf_manual_alignment;
+        save_fn = fullfile(gui_data.save_path,'atlas2histology_tform.mat');
+        save(save_fn,'atlas2histology_tform');
+        disp(['Saved ' save_fn]);
+        delete(gui_fig);
+
+    case 'No'
+        % Close without saving
+        delete(gui_fig);
+
+    case 'Cancel'
+        % Do nothing
+
+end   
+end
 
 
 

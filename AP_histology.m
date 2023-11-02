@@ -50,6 +50,11 @@ annotation_menu = uimenu(histology_toolbar_gui,'Text','Annotation');
 uimenu(annotation_menu,'Text','Neuropixels probes','MenuSelectedFcn', ...
     {@ap_histology.annotate_neuropixels,histology_toolbar_gui});
 
+% View menu
+view_menu = uimenu(histology_toolbar_gui,'Text','View');
+uimenu(view_menu,'Text','View aligned histology','MenuSelectedFcn', ...
+    {@ap_histology.view_aligned_histology,histology_toolbar_gui});
+
 % Create GUI variables
 gui_data.image_path = char;
 gui_data.save_path = char;

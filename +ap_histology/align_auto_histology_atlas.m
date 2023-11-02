@@ -1,21 +1,23 @@
-function AP_auto_align_histology_ccf(slice_im_path)
-% AP_auto_align_histology_ccf(slice_im_path)
+function align_auto_histology_atlas(~,~,histology_toolbar_gui)
+% Part of AP_histology toolbox
 %
 % Auto aligns histology slices and matched CCF slices by outline registration
-% Andy Peters (peters.andrew.j@gmail.com)
 
-% Load in slice images
-slice_im_path = slice_im_path;
-slice_im_dir = dir([slice_im_path filesep '*.tif']);
-slice_im_fn = natsortfiles(cellfun(@(path,fn) [path filesep fn], ...
-    {slice_im_dir.folder},{slice_im_dir.name},'uni',false));
-slice_im = cell(length(slice_im_fn),1);
-for curr_slice = 1:length(slice_im_fn)
-    slice_im{curr_slice} = imread(slice_im_fn{curr_slice});
+% Get images (from path in toolbar GUI)
+histology_toolbar_guidata = guidata(histology_toolbar_gui);
+save_path = histology_toolbar_guidata.save_path;
+
+slice_dir = dir(fullfile(save_path,'*.tif'));
+slice_fn = natsortfiles(cellfun(@(path,fn) fullfile(path,fn), ...
+    {slice_dir.folder},{slice_dir.name},'uni',false));
+
+slice_im = cell(length(slice_fn),1);
+for curr_slice = 1:length(slice_fn)
+   slice_im{curr_slice} = imread(slice_fn{curr_slice});  
 end
 
 % Load corresponding CCF slices
-ccf_slice_fn = [slice_im_path filesep 'histology_ccf.mat'];
+ccf_slice_fn = fullfile(save_path,'histology_ccf.mat');
 load(ccf_slice_fn);
 
 % Align outlines of histology/atlas slices
@@ -66,8 +68,6 @@ for curr_slice = 1:length(slice_im)
     tformEstimate_affine = tformEstimate_affine_resized;
     tformEstimate_affine.T = scale_match*scale_align_down* ...
         tformEstimate_affine_resized.T*scale_align_up;
-
-    curr_av_aligned = imwarp(curr_av,tformEstimate_affine,'nearest','Outputview',imref2d(size(curr_histology)));   
     
     % Store the affine matrix and plot the transform
     atlas2histology_tform{curr_slice} = tformEstimate_affine.T;
@@ -100,7 +100,7 @@ if isvalid(fig_last_aligned)
     close(fig_last_aligned);
 end
 
-save_fn = [slice_im_path filesep 'atlas2histology_tform.mat'];
+save_fn = fullfile(save_path,'atlas2histology_tform.mat');
 save(save_fn,'atlas2histology_tform');
 
 disp(['Finished auto-alignment, saved in ' save_fn]);

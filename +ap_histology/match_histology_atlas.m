@@ -3,20 +3,8 @@ function match_histology_atlas(~,~,histology_toolbar_gui)
 %
 % Choose CCF atlas slices corresponding to histology slices
 
-% Get images (from path in GUI)
-histology_toolbar_guidata = guidata(histology_toolbar_gui);
-
-slice_dir = dir(fullfile(histology_toolbar_guidata.save_path,'*.tif'));
-slice_fn = natsortfiles(cellfun(@(path,fn) fullfile(path,fn), ...
-    {slice_dir.folder},{slice_dir.name},'uni',false));
-
 % Initialize guidata
 gui_data = struct;
-
-gui_data.slice_im = cell(length(slice_fn),1);
-for curr_slice = 1:length(slice_fn)
-   gui_data.slice_im{curr_slice} = imread(slice_fn{curr_slice});  
-end
 
 % Load atlas
 allen_atlas_path = fileparts(which('template_volume_10um.npy'));
@@ -26,9 +14,23 @@ end
 disp('Loading Allen CCF atlas...')
 gui_data.tv = readNPY(fullfile(allen_atlas_path,'template_volume_10um.npy'));
 gui_data.av = readNPY(fullfile(allen_atlas_path,'annotation_volume_10um_by_index.npy'));
-st = loadStructureTree([allen_atlas_path filesep 'structure_tree_safe_2017.csv']);
-
+gui_data.st = ap_histology.loadStructureTree(fullfile(allen_atlas_path,'structure_tree_safe_2017.csv'));
 disp('Done.')
+
+% Get images (from path in GUI)
+histology_toolbar_guidata = guidata(histology_toolbar_gui);
+
+slice_dir = dir(fullfile(histology_toolbar_guidata.save_path,'*.tif'));
+slice_fn = natsortfiles(cellfun(@(path,fn) fullfile(path,fn), ...
+    {slice_dir.folder},{slice_dir.name},'uni',false));
+
+gui_data.slice_im = cell(length(slice_fn),1);
+for curr_slice = 1:length(slice_fn)
+   gui_data.slice_im{curr_slice} = imread(slice_fn{curr_slice});  
+end
+
+% Set save path (from toolbar GUI
+gui_data.save_path = histology_toolbar_guidata.save_path;
 
 % Create figure, set button functions
 screen_size_px = get(0,'screensize');
@@ -42,7 +44,8 @@ gui_position = [...
 
 gui_fig = figure('WindowScrollWheelFcn',@scroll_atlas_slice, ...
     'KeyPressFcn',@keypress,'Toolbar','none','Menubar','none','color','w', ...
-    'Units','pixels','Position',gui_position);
+    'Units','pixels','Position',gui_position, ...
+    'CloseRequestFcn',@close_gui);
 
 % Set up axis for histology image
 gui_data.histology_ax = subplot(1,2,1,'YDir','reverse'); 
@@ -70,7 +73,7 @@ gui_data.atlas_title = title(sprintf('Slice position: %d',0));
 
 % Create CCF colormap
 % (copied from cortex-lab/allenCCF/setup_utils
-ccf_color_hex = st.color_hex_triplet;
+ccf_color_hex = gui_data.st.color_hex_triplet;
 ccf_color_hex(cellfun(@numel,ccf_color_hex)==5) = {'019399'}; % special case where leading zero was evidently dropped
 ccf_cmap_c1 = cellfun(@(x)hex2dec(x(1:2)), ccf_color_hex, 'uni', false);
 ccf_cmap_c2 = cellfun(@(x)hex2dec(x(3:4)), ccf_color_hex, 'uni', false);
@@ -105,8 +108,7 @@ msgbox( ...
     'Shift + arrows: change atlas rotation', ...
     'm : change atlas display mode (TV/AV/TV-AV overlay)', ...
     'Scroll wheel: move CCF slice in/out of plane', ...
-    'Enter: set current histology and CCF slice pair', ...
-    'Escape: save and close'}, ...
+    'Enter: set current histology and CCF slice pair'}, ...
     'Controls',CreateStruct);
 
 end 
@@ -173,51 +175,6 @@ switch eventdata.Key
         update_histology_slice(gui_fig);
         title(gui_data.histology_ax,'New saved atlas position');
         
-    % Escape: save and exit
-    case 'escape'
-        opts.Default = 'Yes';
-        opts.Interpreter = 'tex';
-        user_confirm = questdlg('\fontsize{15} Save and quit?','Confirm exit',opts);
-        if strcmp(user_confirm,'Yes')
-            
-            % Check that a CCF slice point exists for each histology slice
-            if any(isnan(gui_data.slice_points(:)))
-                createmode = struct;
-                createmode.Interpreter = 'tex';
-                createmode.WindowStyle = 'modal';
-                msgbox('\fontsize{12} Some histology slice(s) not assigned CCF slice', ...
-                    'Not saving','error',createmode);
-                return
-            end
-            
-            % Go through each slice, pull full-resolution atlas slice and
-            % corrsponding coordinates       
-            histology_ccf_init = cell(length(gui_data.slice_im),1);
-            histology_ccf = struct( ...
-                'tv_slices',histology_ccf_init, ...
-                'av_slices',histology_ccf_init, ...
-                'plane_ap',histology_ccf_init, ...
-                'plane_ml',histology_ccf_init, ...
-                'plane_dv',histology_ccf_init);
-            
-            h = waitbar(0,'Saving atlas slices...');
-            for curr_slice = 1:length(gui_data.slice_im)
-                gui_data.atlas_slice_point = gui_data.slice_points(curr_slice,:);
-                [histology_ccf(curr_slice).tv_slices, ...
-                    histology_ccf(curr_slice).av_slices, ...
-                    histology_ccf(curr_slice).plane_ap, ...
-                    histology_ccf(curr_slice).plane_ml, ...
-                    histology_ccf(curr_slice).plane_dv] = ...
-                    grab_atlas_slice(gui_data,1);
-                waitbar(curr_slice/length(gui_data.slice_im),h, ...
-                    ['Saving atlas slices (' num2str(curr_slice) '/' num2str(length(gui_data.slice_im)) ')...']);
-            end                     
-            close(h);
-            
-            save_fn = [gui_data.slice_im_path filesep 'histology_ccf.mat'];
-            save(save_fn,'histology_ccf','-v7.3');
-            close(gui_fig);            
-        end
 end
 
 end
@@ -300,7 +257,7 @@ switch gui_data.atlas_mode
     case 'TV-AV'
         atlas_slice = av_slice;
         colormap(gui_data.ccf_cmap)
-        caxis([1,size(gui_data.ccf_cmap,1)])
+        caxis(gui_data.atlas_ax,[1,size(gui_data.ccf_cmap,1)])
 end
 set(gui_data.atlas_slice_plot,'XData',plane_ap,'YData',plane_ml,'ZData',plane_dv,'CData',atlas_slice);
 
@@ -389,7 +346,63 @@ set(gui_data.atlas_title,'string', ...
 
 end
 
+function close_gui(gui_fig,~)
 
+% Get guidata
+gui_data = guidata(gui_fig);
+
+
+% Check that a CCF slice point exists for each histology slice
+if any(isnan(gui_data.slice_points(:)))
+    createmode = struct;
+    createmode.Interpreter = 'tex';
+    createmode.WindowStyle = 'modal';
+    uiwait(msgbox('\fontsize{12} Note: some histology slice(s) not assigned atlas slice', ...
+        'Incomplete slice assignment','warn',createmode));
+end
+
+opts.Default = 'Yes';
+opts.Interpreter = 'tex';
+user_confirm = questdlg('\fontsize{14} Save?','Confirm exit',opts);
+switch user_confirm
+    case 'Yes'
+        % Go through each slice, pull full-resolution atlas slice and
+        % corrsponding coordinates
+        histology_ccf_init = cell(length(gui_data.slice_im),1);
+        histology_ccf = struct( ...
+            'tv_slices',histology_ccf_init, ...
+            'av_slices',histology_ccf_init, ...
+            'plane_ap',histology_ccf_init, ...
+            'plane_ml',histology_ccf_init, ...
+            'plane_dv',histology_ccf_init);
+
+        h = waitbar(0,'Saving atlas slices...');
+        for curr_slice = 1:length(gui_data.slice_im)
+            gui_data.atlas_slice_point = gui_data.slice_points(curr_slice,:);
+            [histology_ccf(curr_slice).tv_slices, ...
+                histology_ccf(curr_slice).av_slices, ...
+                histology_ccf(curr_slice).plane_ap, ...
+                histology_ccf(curr_slice).plane_ml, ...
+                histology_ccf(curr_slice).plane_dv] = ...
+                grab_atlas_slice(gui_data,1);
+            waitbar(curr_slice/length(gui_data.slice_im),h, ...
+                ['Saving atlas slices (' num2str(curr_slice) '/' num2str(length(gui_data.slice_im)) ')...']);
+        end
+        close(h);
+
+        save_fn = fullfile(gui_data.save_path,'histology_ccf.mat');
+        save(save_fn,'histology_ccf','-v7.3');
+        delete(gui_fig);
+
+    case 'No'
+        % Close without saving
+        delete(gui_fig);
+
+    case 'Cancel'
+        % Do nothing
+
+end   
+end
 
 
 
