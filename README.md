@@ -1,6 +1,6 @@
-This pipeline aligns histology images to the Allen CCF.
+Toolbox for aliging histology images to the Allen CCF mouse atlas.
 
-A video demonstration of this tool is available here: https://www.youtube.com/watch?v=HKm_G17Wc6g
+A video demonstration of this toolbox is available here (note - old interface is demoed): https://www.youtube.com/watch?v=HKm_G17Wc6g
 
 Requires 
 - Mouse: download the Allen CCF mouse atlas [download here](https://osf.io/fv7ed/) * 
@@ -8,11 +8,16 @@ Requires
 *(note on where these files came from: they are a re-formatted version of [the original atlas](http://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/ccf_2017/), which has been [processed with this script](https://github.com/cortex-lab/allenCCF/blob/master/setup_utils.m))
 - [The npy-matlab repository](http://github.com/kwikteam/npy-matlab)
 
-This was made with inspiration from SHARP-Track by Philip Shamash (https://github.com/cortex-lab/allenCCF, https://www.biorxiv.org/content/10.1101/447995v1). It mostly serves the same goals, but has different interfaces (most notably in the histology/CCF matching step) and saves some extra information (like the full CCF coordinates for each CCF slice), which was easier to build new compared to modifying the old.
-
-All functions are listed in the 'demo_histology_pipeline.m' file.
+Inspiration from SHARP-Track by Philip Shamash (https://www.biorxiv.org/content/10.1101/447995v1).
 
 ## Histology preprocessing
+
+### Toolbox menu
+Open the toolbox menu with:
+```matlab
+AP_histology
+![image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/menu_gui.png)
+```
 
 ### AP_process_histology
 ```matlab
@@ -23,7 +28,7 @@ AP_process_histology(im_path,resize_factor); % For user-specified resizing
 
 Colors will be automatically white-balanced, user indicates color of each channel
 
-![test image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_process_histology_1.png)
+![image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_process_histology_1.png)
 
 2) Extract slice images from slides
 
@@ -32,7 +37,7 @@ Select slices to extract and save:
 - right-clicking will draw a manual region to extract
 - left-clicking on an existing selected region will unselect it
 - spacebar moves to the next slide. 
-![test image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_process_histology_2.png)
+![image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_process_histology_2.png)
 
 ### AP_rotate_histology
 ```matlab
@@ -40,7 +45,7 @@ AP_rotate_histology(slice_path);
 ```
 
 Draw reference line (midline) to center and rotate slices.
-![test image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_rotate_histology.png)
+![image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_rotate_histology.png)
 
 ## Histology CCF alignment
 
@@ -55,7 +60,7 @@ This function is to match histology slices to their corresponding CCF slices. Th
 - Once the angle is set, the CCF slice location can be set with the scroll wheel. For each histology slice, scroll to the matching CCF slice and hit 'Enter' to set that slices' location.
 - Once all histology slices are set, hit 'Escape' to save and quit
 
-![test image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_grab_histology_ccf.png)
+![image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_grab_histology_ccf.png)
 
 ### AP_auto_align_histology_ccf
 ```matlab
@@ -64,7 +69,7 @@ AP_auto_align_histology_ccf(tv,av,st,slice_path);
 
 This function auto-aligns each corresponding histology and CCF slice by slice outline only
 
-![test image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_auto_align_histology_ccf.png)
+![image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_auto_align_histology_ccf.png)
 
 ### AP_manual_align_histology_ccf
 ```matlab
@@ -74,10 +79,10 @@ AP_manual_align_histology_ccf(tv,av,st,slice_path);
 If the auto-alignment didn't work on some slices, they can be manually fixed with this function. Placing > 3 corresponding points on the histology and CCF slices creates a new alignment using those control points, and 'Escape' saves and quits.
 
 From auto-alignment:
-![test image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_manual_align_histology_ccf_1.png)
+![image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_manual_align_histology_ccf_1.png)
 
 After manual control-point alignment: 
-![test image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_manual_align_histology_ccf_2.png)
+![image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_manual_align_histology_ccf_2.png)
 
 ## Aligned histology usage
 
@@ -124,6 +129,7 @@ The final useful output of this is a file/structure 'probe_ccf' which contains:
 - probe_ccf.trajectory_coords: the 3D CCF coordinates of the probe trajectory
 
 ## Major change log
+2023-11-02 - Created menu GUI for easier interfacing and re-structured code
 - probe_ccf.trajectory_areas: the annotated CCF areas for each point
 - probe_ccf.probe_depths: the relative depth of the probe to that point (e.g. 0 is the top towards headstage of the probe and ~3840 is the tip of the probe). Note that this is reversed from the standard Kilosort output, which from 0 = tip to 3840 = top towards headstage.
 
