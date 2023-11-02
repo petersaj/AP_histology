@@ -16,8 +16,11 @@ Inspiration from SHARP-Track by Philip Shamash (https://www.biorxiv.org/content/
 Open the toolbox menu with:
 ```matlab
 AP_histology
-![image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/menu_gui.png)
 ```
+This is the menu for to run all toolbox functions.
+
+![image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/menu_gui.png)
+
 
 ### AP_process_histology
 ```matlab
