@@ -110,47 +110,14 @@ image_path_text = sprintf('Raw image path:       %s',gui_data.image_path);
 save_path_text = sprintf('Processing save path: %s',gui_data.save_path);
 
 % Check for present files
-% (images)
-if ~isempty(gui_data.image_path)
-    n_raw_images = length(dir(fullfile(gui_data.image_path,'*.tif')));
-else
-    n_raw_images = 0;
-end
-n_raw_images_text = sprintf('Raw images: %d',n_raw_images);
+n_raw_images = length(dir(fullfile(gui_data.image_path,'*.tif')));
+n_raw_images_text = sprintf('%d raw images found');
 
-if ~isempty(gui_data.image_path)
-    n_processed_images = length(dir(fullfile(gui_data.save_path,'*.tif')));
-else
-    n_processed_images = 0;
-end
-n_processed_images_text = sprintf('Processed images: %d',n_processed_images);
+n_raw_images = length(dir(fullfile(gui_data.image_path,'*.tif')));
+n_raw_images_text = sprintf('%d raw images found');
 
-% (alignment)
-if exist(fullfile(gui_data.save_path,'histology_ccf.mat'),'file')
-    histology_atlas_text = 'Histology atlas slices: YES';
-else
-    histology_atlas_text = 'Histology atlas slices: NO';
-end
-
-if exist(fullfile(gui_data.save_path,'atlas2histology_tform.mat'),'file')
-    alignment_text = 'Histology-atlas alignment: YES';
-else
-    alignment_text = 'Histology-atlas alignment: NO';
-end
-
-% (annotations)
-if exist(fullfile(gui_data.save_path,'probe_ccf.mat'),'file')
-    annotations_text = 'Neuropixels probe annotations';
-else
-    annotations_text = '';
-end
-
-gui_text = {image_path_text,save_path_text,' ', ...
-    n_raw_images_text,n_processed_images_text, ' ', ...
-    histology_atlas_text,alignment_text, ...
-    annotations_text};
-
-set(gui_data.gui_text,'String',gui_text(cellfun(@(x) ~isempty(x),gui_text)));
+gui_text = {image_path_text,save_path_text};
+set(gui_data.gui_text,'String',gui_text);
 
 end
 

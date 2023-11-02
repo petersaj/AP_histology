@@ -373,12 +373,12 @@ switch user_confirm
         end
 
         % Save probe CCF points
-        save_fn = [gui_data.slice_im_path filesep 'probe_ccf.mat'];
+        save_fn = fullfile(gui_data.save_path,'probe_ccf.mat');
         save(save_fn,'probe_ccf');
         disp(['Saved probe locations in ' save_fn])
 
         % Close GUI
-        close(gui_fig)
+        delete(gui_fig)
 
         % Plot probe trajectories
         plot_probe(gui_data,probe_ccf);
