@@ -1,0 +1,95 @@
+function AP_histology
+
+% Set up the gui
+screen_size_px = get(0,'screensize');
+gui_aspect_ratio = 5; % width/length
+gui_width_fraction = 0.5; % fraction of screen width to occupy
+gui_border = 50; % border from gui to screen edge
+gui_width_px = screen_size_px(3).*gui_width_fraction;
+gui_height_px = gui_width_px/gui_aspect_ratio;
+gui_position = [...
+    gui_border, ... % left x
+    screen_size_px(4)-(gui_height_px+gui_border+50), ... % bottom y
+    gui_width_px,gui_height_px]; % width, height
+
+histology_toolbar_gui = figure('Toolbar','none','Menubar','none','color','w', ...
+    'Name','AP Histology', ...
+    'Units','pixels','Position',gui_position);
+
+% Set up the text to display coordinates
+gui_data.gui_text = annotation('textbox','String','', ...
+    'Units','normalized','Position',[0,0,1,1],'VerticalAlignment','top', ...
+    'FontSize',12,'FontName','Consolas','PickableParts','none');
+
+file_controls_menu = uimenu(histology_toolbar_gui,'Text','File selection');
+uimenu(file_controls_menu,'Text','Set image path','MenuSelectedFcn',{@set_raw_path,histology_toolbar_gui});
+uimenu(file_controls_menu,'Text','Set save folder','MenuSelectedFcn',{@set_save_path,histology_toolbar_gui});
+
+preprocess_controls_menu = uimenu(histology_toolbar_gui,'Text','Image preprocessing');
+uimenu(preprocess_controls_menu,'Text','Set color and contrast','MenuSelectedFcn',{@fcn,histology_toolbar_gui});
+uimenu(preprocess_controls_menu,'Text','Extract slices from slide','MenuSelectedFcn',{@fcn,histology_toolbar_gui});
+
+
+% % Set slide or slice images
+% % slice_images = false; % (images are slides - extract individual slices)
+% slice_images = true; % (images are already individual slices)
+% 
+% % Preprocess images
+% AP_process_histology(im_path,resize_factor,slice_images);
+% 
+% % (optional) Rotate, center, pad, flip slice images
+% AP_rotate_histology(slice_path);
+
+% Create GUI variables
+gui_data.image_path = [];
+gui_data.save_path = [];
+
+% Store guidata
+guidata(histology_toolbar_gui,gui_data);
+
+end
+
+function set_raw_path(histology_toolbar_gui)
+
+% Get guidata
+gui_data = guidata(histology_toolbar_gui);
+
+% Pick image path
+gui_data.image_path = uigetdir([],'Select path with raw images');
+
+% Store guidata
+guidata(histology_toolbar_gui,gui_data);
+
+end
+
+
+function update_text(histology_toolbar_gui)
+
+set(gui_data.probe_coordinates_text,'String',probe_text(cellfun(@(x) ~isempty(x),probe_text)));
+
+raw_image_path_text = sprintf('Raw image path: %s',gui_data.
+
+gui_text = {probe_angle_text,probe_insertion_text, ...
+    recording_startpoint_text,recording_endpoint_text,bregma_lambda_text, ...
+    manipulator_text,recording_text};
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

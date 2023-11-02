@@ -1,53 +1,40 @@
-function AP_process_histology(im_path,resize_factor,slice_images)
-% AP_process_histology(im_path,resize_factor,slice_images)
+function create_slice_images(~,~,histology_toolbar_gui)
+% Part of AP_histology toolbox
 %
-% im_path - path with images of slides (tif/tiff/ome.tiff)
-% resize_factor (if not ome.tiff) - resizing factor for saving images (e.g.
-% 1/10 scales slides to 1/10 size). Note: if ome.tiff, microns per pixel is
-% grabbed from image headers and the images are resized to match the CCF
-% scaling (which is 10 microns per pixel)
-% slice_images - true/false: images are individual slices, skip slice
-% choosing step (false by default)
-%
-% Resize and white balance histology images and extract images of each slice
+% 1) Resize images by downsampling (if selected)
+% 2) Set white balance and color for each channel
+% 3) Extract individual slices (if slide images)
+
+% Get data from GUI
+gui_data = guidata(histology_toolbar_gui);
+
+% Check that paths are set and images exist
+if isempty(gui_data.image_path)
+    error('No image path set (File selection > Set image path)')
+end
+if isempty(gui_data.save_path)
+    error('No save path set (File selection > Set save path)')
+end
 
 % Get and sort image files
-im_path_dir = dir([im_path filesep '*.tif*']);
-im_fn = natsortfiles(cellfun(@(path,fn) [path filesep fn], ...
-    {im_path_dir.folder},{im_path_dir.name},'uni',false));
-
-% Check image metadata for pixel size (if ome.tiff)
-im_info = imfinfo(im_fn{1});
-if isfield(im_info,'ImageDescription')
-    im_description = im_info(1).ImageDescription;
-    im_um = regexp(im_description,'PhysicalSizeX="(\S*)".*PhysicalSizeY="(\S*)"','tokens');
-else
-    im_um = [];
+gui_data.image_path_dir = dir(fullfile(gui_data.image_path,'*.tif'));
+% (error if none found)
+if isempty(gui_data.image_path_dir)
+    error('No TIFF images found in %s',gui_data.image_path)
 end
+im_fn = natsortfiles(cellfun(@(path,fn) fullfile(path,fn), ...
+    {gui_data.image_path_dir.folder},{gui_data.image_path_dir.name},'uni',false));
+
+% Get user settings
+im_settings = inputdlg({'Image downsample factor: (resize to 1/X)', ...
+    'Are images individual slices? (1 = yes, 0 = no)'},'Image preprocessing settings',1, ...
+    {'1','1'});
+downsample_factor = str2double(im_settings{1});
+slice_images = str2double(im_settings{2});
 
 % If image is RGB, set flag
+im_info = imfinfo(im_fn{1});
 im_is_rgb = strcmp(im_info(1).PhotometricInterpretation,'RGB');
-
-% Set resize factor from user (if provided), or if no resize factor
-% provided and pixel size is available, resize to match CCF
-if exist('resize_factor','var') && ~isempty(resize_factor)
-    % (resize_factor already set by user)
-    
-elseif (~exist('resize_factor','var') || isempty(resize_factor)) && ~isempty(im_um)
-    im_um_x = str2num(im_um{1}{1});
-    im_um_y = str2num(im_um{1}{2});
-    
-    if im_um_x ~= im_um_y
-        error('Pixel X/Y values different (not accounted for yet)')
-    end
-    
-    % Set resize factor to match to Allen CCF
-    allen_um2px = 10; % Allen CCF: 10 um/voxel
-    resize_factor = im_um_x/allen_um2px;
-    
-else
-    error('No resize factor provided and pixel size not in metadata');
-end
 
 % Load and resize images
 n_im = length(im_fn);
@@ -61,7 +48,7 @@ if ~im_is_rgb
     
     for curr_im = 1:n_im
         for curr_channel = 1:n_channels
-            im_resized{curr_im,curr_channel} = imresize(imread(im_fn{curr_im},curr_channel),resize_factor);
+            im_resized{curr_im,curr_channel} = imresize(imread(im_fn{curr_im},curr_channel),1/downsample_factor);
         end
         waitbar(curr_im/n_im,h,['Loading and resizing images (' num2str(curr_im) '/' num2str(n_im) ')...']);
     end
@@ -109,47 +96,33 @@ if ~im_is_rgb
         
         channel_caxis(curr_channel,:) = [cmin,cmax];
         
-        channel_color{curr_channel} = questdlg('What color should this be?', ...
-            'Set color','red','green','blue','red');
+        % Choose channel color
+        channel_color{curr_channel} = uisetcolor([],'Pick channel color');
         
     end
     close(h)
-    
-    % Get order of colors
-    color_order_gun = {'red';'green';'blue'};
-    [~,color_order_slide] = ismember(channel_color,color_order_gun);
-    
-    %     % Display montage of final balanced image, sort color channels by RGB
-    %     im_montage_rgb = zeros(size(im_montage{1},1),size(im_montage{1},2),3);
-    %     im_montage_rgb(:,:,color_order_slide) = ...
-    %         cell2mat(arrayfun(@(ch) rescale(im_montage{ch}, ...
-    %         'InputMin',channel_caxis(ch,1),'InputMax',channel_caxis(ch,2)), ...
-    %         permute(1:n_channels,[1,3,2]),'uni',false));
-    %     figure;imshow(im_montage_rgb);
-    %     title('Overview of all images');
-    
+
     % Store RGB for each slide
+    color_vector = permute(cell2mat(channel_color),[3,4,1,2]);
     im_rgb = cellfun(@(x) zeros(size(x,1),size(x,2),3),im_resized(:,1),'uni',false);
     for curr_im = 1:n_im
-        im_rgb{curr_im}(:,:,color_order_slide) = ...
+        rescaled_balanced_combined_im = ...
             cell2mat(arrayfun(@(ch) rescale(im_resized{curr_im,ch}, ...
             'InputMin',channel_caxis(ch,1),'InputMax',channel_caxis(ch,2)), ...
             permute(1:n_channels,[1,3,2]),'uni',false));
+        
+        im_rgb{curr_im} = min(permute(sum(rescaled_balanced_combined_im.* ...
+            color_vector,3),[1,2,4,3]),1);     
     end
-    
+
 elseif im_is_rgb
     % If images are already RGB, just load in and resize
     im_rgb = cell(n_im,1);
     for curr_im = 1:n_im
-        im_rgb{curr_im} = imresize(imread(im_fn{curr_im}),resize_factor);
+        im_rgb{curr_im} = imresize(imread(im_fn{curr_im}),downsample_factor);
         waitbar(curr_im/n_im,h,['Loading and resizing images (' num2str(curr_im) '/' num2str(n_im) ')...']);
     end
     close(h)
-end
-
-% Set slice_images false by default
-if ~exist('slice_images','var') || isempty(slice_images)
-    slice_images = false;
 end
 
 if ~slice_images
@@ -159,9 +132,9 @@ if ~slice_images
     
     % Initialize data
     slice_data = struct;
-    slice_data.im_path = im_path;
+    slice_data.gui_data.image_path = gui_data.image_path;
     slice_data.im_fn = im_fn;
-    slice_data.im_rescale_factor = resize_factor;
+    slice_data.im_rescale_factor = downsample_factor;
     slice_data.im_rgb = im_rgb;
     slice_data.curr_slide = 0;
     slice_data.slice_mask = cell(0,0);
@@ -177,19 +150,17 @@ elseif slice_images
     % If slice images, save all images as-is
     
     % Set save directory as subdirectory within original
-    save_dir = [im_path filesep 'slices'];
-    if ~exist(save_dir,'dir')
-        mkdir(save_dir)
+    if ~exist(gui_data.save_path,'dir')
+        mkdir(gui_data.save_path)
     end
     
     % Write all slice images to separate files
     disp('Saving slice images...');
     for curr_im = 1:length(im_rgb)
-        curr_fn = [save_dir filesep num2str(curr_im) '.tif'];
-        imwrite(im_rgb{curr_im},curr_fn,'tif');
+        curr_im_filename = fullfile(gui_data.save_path,sprintf('slice_%d.tif',curr_im));
+        imwrite(im_rgb{curr_im},curr_im_filename,'tif');
     end
     disp('Done.');
-    
     
 end
 
@@ -369,7 +340,7 @@ function save_slice_rgb(slice_fig)
 slice_data = guidata(slice_fig);
 
 % Set save directory as subdirectory within original
-save_dir = [slice_data.im_path filesep 'slices'];
+save_dir = fullfile(slice_data.gui_data.image_path,'slices');
 if ~exist(save_dir,'dir')
     mkdir(save_dir)
 end
@@ -379,7 +350,7 @@ slice_rgb_cat = vertcat(slice_data.slice_rgb{:});
 
 % Write all slice images to separate files
 for curr_im = 1:length(slice_rgb_cat)
-    curr_fn = [save_dir filesep num2str(curr_im) '.tif'];
+    curr_fn = fullfile(save_dir,sprintf('slice_%d.tif',curr_im));
     imwrite(slice_rgb_cat{curr_im},curr_fn,'tif');
 end
 
@@ -403,7 +374,7 @@ for curr_slide = 1:length(slice_data.slice_mask)
     end
 end
 
-slice_slide_locations_fn = [save_dir filesep 'slice_slide_locations.mat'];
+slice_slide_locations_fn = fullfile(save_dir,'slice_slide_locations.mat');
 save(slice_slide_locations_fn,'slice_slide_locations');
 
 disp(['Slices saved in ' save_dir]);
