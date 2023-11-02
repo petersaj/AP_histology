@@ -19,7 +19,7 @@ AP_histology
 ```
 This is the menu for to run all toolbox functions.
 
-![image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/menu_gui.png)
+![image](https://github.com/petersaj/AP_histology/blob/master/wiki/histology/menu_gui.png)
 
 
 ### AP_process_histology
@@ -31,7 +31,7 @@ AP_process_histology(im_path,resize_factor); % For user-specified resizing
 
 Colors will be automatically white-balanced, user indicates color of each channel
 
-![image](https://github.com/petersaj/AP_scripts_cortexlab/blob/master/wiki/histology/AP_process_histology_1.png)
+![image](https://github.com/petersaj/AP_histology/blob/master/wiki/menu_gui.png)
 
 2) Extract slice images from slides
 
