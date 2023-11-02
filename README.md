@@ -122,6 +122,8 @@ This will plot the template depth vs spike rate (left), the multiunit correlatio
 
 The final useful output of this is a file/structure 'probe_ccf' which contains: 
 - probe_ccf.trajectory_coords: the 3D CCF coordinates of the probe trajectory
+
+## Major change log
 - probe_ccf.trajectory_areas: the annotated CCF areas for each point
 - probe_ccf.probe_depths: the relative depth of the probe to that point (e.g. 0 is the top towards headstage of the probe and ~3840 is the tip of the probe). Note that this is reversed from the standard Kilosort output, which from 0 = tip to 3840 = top towards headstage.
 
