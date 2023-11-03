@@ -50,9 +50,6 @@ for curr_slice = 1:length(gui_data.slice_im)
         imwarp(curr_av_slice,tform,'nearest','OutputView',tform_size);
 end
 
-% Select atlas overlay color
-gui_data.overlay_color = uisetcolor([0,0,1],'Select atlas overlay color');
-
 % Create figure, set button functions
 screen_size_px = get(0,'screensize');
 gui_aspect_ratio = 1.7; % width/length
@@ -69,7 +66,6 @@ gui_fig = figure('KeyPressFcn',@keypress, ...
     'Units','pixels','Position',gui_position);
 
 gui_data.curr_slice = 1;
-gui_data.overlay_flag = true;
 
 % Set up axis for histology image
 gui_data.histology_ax = axes('YDir','reverse'); 
@@ -109,10 +105,10 @@ switch eventdata.Key
         update_slice(gui_fig);
         
     case 'space'
-        gui_data.overlay_flag = ~gui_data.overlay_flag;
-        guidata(gui_fig,gui_data);
-        update_slice(gui_fig);
-        
+        curr_visibility = ...
+            get(gui_data.histology_aligned_atlas_boundaries,'Visible');
+        set(gui_data.histology_aligned_atlas_boundaries,'Visible', ...
+            cell2mat(setdiff({'on','off'},curr_visibility)))
 end
 
 end
@@ -165,13 +161,9 @@ av_warp_boundaries = boundarymask(curr_av_slice_warp);
 gui_data.curr_av_warp_boundaries = av_warp_boundaries;
 
 % Plot slice and overlaid atlas boundaries
-if gui_data.overlay_flag
-    curr_overlay = imoverlay(curr_slice_im,gui_data.curr_av_warp_boundaries, ...
-        gui_data.overlay_color);
-    set(gui_data.histology_im_h,'CData',curr_overlay);
-else
-    set(gui_data.histology_im_h,'CData',curr_slice_im);
-end
+curr_overlay = imoverlay(curr_slice_im,gui_data.curr_av_warp_boundaries, ...
+    gui_data.overlay_color);
+set(gui_data.histology_im_h,'CData',curr_overlay);
 
 % Upload gui data
 guidata(gui_fig, gui_data);

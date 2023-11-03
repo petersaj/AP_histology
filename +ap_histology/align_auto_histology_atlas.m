@@ -13,14 +13,14 @@ slice_fn = natsortfiles(cellfun(@(path,fn) fullfile(path,fn), ...
 
 slice_im = cell(length(slice_fn),1);
 for curr_slice = 1:length(slice_fn)
-   slice_im{curr_slice} = imread(slice_fn{curr_slice});  
+    slice_im{curr_slice} = imread(slice_fn{curr_slice});
 end
 
 % Load corresponding CCF slices
 ccf_slice_fn = fullfile(save_path,'histology_ccf.mat');
 load(ccf_slice_fn);
 
-% Binarize slices
+% Binarize slices (only necessary if aligning outlines)
 slice_im_flat = cellfun(@(x) max(x,[],3),slice_im,'uni',false);
 slice_thresh = graythresh(cell2mat(cellfun(@(x) reshape(x(x~=0),[],1),slice_im_flat,'uni',false)));
 slice_thresh_adjust = slice_thresh + (1-slice_thresh)*0.8;
@@ -38,32 +38,36 @@ atlas2histology_tform = cell(size(slice_im));
 
 waitbar_h = waitbar(0,'Aligning atlas/histology slices...');
 for curr_slice = 1:length(slice_im)
-    
-    % Get histology slice outline
-    curr_histology_thresh = +slice_im_binary{curr_slice};
 
-    % Get atlas slice outline
-    curr_av = histology_ccf(curr_slice).av_slices;
-    curr_av(isnan(curr_av)) = 1;
-    curr_av_thresh = +(curr_av > 1);
+    % To align anatomy:
+    curr_histology_slice = slice_im_flat{curr_slice};
+    curr_atlas_slice = histology_ccf(curr_slice).tv_slices;
+    curr_atlas_slice(isnan(curr_atlas_slice)) = 0;
+    [optimizer, metric] = imregconfig('multimodal');
+    optimizer.MaximumIterations = 200;
+    optimizer.GrowthFactor = 1+1e-3;
+    optimizer.InitialRadius = 1e-3;
+
+%     % To align outlines:
+%     curr_histology_slice = +slice_im_binary{curr_slice};
+%     curr_atlas_slice = +(histology_ccf(curr_slice).av_slices > 1);
+%     [optimizer, metric] = imregconfig('monomodal');
+%     optimizer.MaximumIterations = 200;
+%     optimizer.MaximumStepLength = 1e-2;
+%     optimizer.GradientMagnitudeTolerance = 1e-5;
+%     optimizer.RelaxationFactor = 1e-1;
 
     % Resize atlas outline to approximately match histology, affine-align
-    resize_factor = min(size(curr_histology_thresh)./size(curr_av_thresh));
-    curr_av_thresh_resize = imresize(curr_av_thresh,resize_factor,'nearest');
-    
-    [optimizer, metric] = imregconfig('monomodal');
-    optimizer.MaximumIterations = 200;
-    optimizer.MaximumStepLength = 1e-2;
-    optimizer.GradientMagnitudeTolerance = 1e-5;
-    optimizer.RelaxationFactor = 1e-1;
+    resize_factor = min(size(curr_histology_slice)./size(curr_atlas_slice));
+    curr_atlas_slice_resize = imresize(curr_atlas_slice,resize_factor,'nearest');
 
     % Do alignment on downsampled sillhouettes (faster and more accurate)
-    downsample_factor = 10;
+    downsample_factor = 5;
 
     tformEstimate_affine_resized = ...
         imregtform( ...
-        imresize(curr_av_thresh_resize,1/downsample_factor,'nearest'), ...
-        imresize(curr_histology_thresh,1/downsample_factor,'nearest'), ...
+        imresize(curr_atlas_slice_resize,1/downsample_factor,'nearest'), ...
+        imresize(curr_histology_slice,1/downsample_factor,'nearest'), ...
         'affine',optimizer,metric,'PyramidLevels',3);
 
     % Set final transform (scale to histology, downscale, affine, upscale)
@@ -74,20 +78,20 @@ for curr_slice = 1:length(slice_im)
     tformEstimate_affine = tformEstimate_affine_resized;
     tformEstimate_affine.T = scale_match*scale_align_down* ...
         tformEstimate_affine_resized.T*scale_align_up;
-    
+
     % Store the affine matrix and plot the transform
     atlas2histology_tform{curr_slice} = tformEstimate_affine.T;
-    
-    curr_av_aligned = imwarp(curr_av,tformEstimate_affine,'nearest', ...
-        'Outputview',imref2d(size(curr_histology_thresh)));   
-    
-    av_aligned_boundaries = round(conv2(curr_av_aligned,ones(3)./9,'same')) ~= curr_av_aligned;
 
-    atlas_align_borders{curr_slice} = av_aligned_boundaries;
+    % Get aligned atlas areas
+    curr_av_aligned = imwarp(histology_ccf(curr_slice).av_slices,tformEstimate_affine,'nearest', ...
+        'Outputview',imref2d(size(curr_histology_slice)));
+    atlas_align_borders{curr_slice} = ...
+        round(conv2(curr_av_aligned,ones(3)./9,'same')) ~= curr_av_aligned;
 
     waitbar(curr_slice/length(slice_im),waitbar_h, ...
         sprintf('Aligning atlas/histology slices: %d/%d', ...
-        curr_slice,length(slice_im)));    
+        curr_slice,length(slice_im)));
+
 end
 
 close(waitbar_h);
@@ -118,11 +122,11 @@ aligned_atlas_montage.CData = padarray(aligned_atlas_montage.CData,[0,0,1],0,'bo
 
 title('Slices, binary threshold (red), aligned atlas slice (green)');
 
-% Save
-save_fn = fullfile(save_path,'atlas2histology_tform.mat');
-save(save_fn,'atlas2histology_tform');
-
-disp(['Finished auto-alignment, saved in ' save_fn]);
+% % Save
+% save_fn = fullfile(save_path,'atlas2histology_tform.mat');
+% save(save_fn,'atlas2histology_tform');
+% 
+% disp(['Finished auto-alignment, saved in ' save_fn]);
 
 
 
