@@ -122,11 +122,11 @@ aligned_atlas_montage.CData = padarray(aligned_atlas_montage.CData,[0,0,1],0,'bo
 
 title('Slices, binary threshold (red), aligned atlas slice (green)');
 
-% % Save
-% save_fn = fullfile(save_path,'atlas2histology_tform.mat');
-% save(save_fn,'atlas2histology_tform');
-% 
-% disp(['Finished auto-alignment, saved in ' save_fn]);
+% Save
+save_fn = fullfile(save_path,'atlas2histology_tform.mat');
+save(save_fn,'atlas2histology_tform');
+
+disp(['Finished auto-alignment, saved in ' save_fn]);
 
 
 
