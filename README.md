@@ -40,7 +40,7 @@ Set the location of the raw images and save path
 
 In the initial dialog box, select the image downsampling factor (e.g. 2 reduces image size to 1/2) and whether images are individual slices (1 = slices, 0 = not slices, e.g. slides)
 
-A montogue of images will be shown for each channel, user selects white balance and color:
+A montage of images will be shown for each channel, user selects white balance and color:
 ![image](https://github.com/petersaj/AP_histology/blob/master/wiki/AP_process_histology_1.png)
 
 To create individual slice images from slide imges: 
