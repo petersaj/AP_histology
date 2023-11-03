@@ -101,5 +101,5 @@ The final probe trajectory will be a line of best fit through all marked points,
 Display the histology slices with overlaid boundaries, hover over region to display name 
 
 # Major change log
-2023-11-02 - Created menu GUI for easier interfacing and re-structured code
+2023-11-02 - Created menu GUI for easier interfacing re-structured/improve much of the code, improved auto-align
 
