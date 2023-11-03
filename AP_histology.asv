@@ -3,8 +3,8 @@ function AP_histology
 
 % Set up the gui
 screen_size_px = get(0,'screensize');
-gui_aspect_ratio = 2; % width/length
-gui_width_fraction = 0.3; % fraction of screen width to occupy
+gui_aspect_ratio = 1.5; % width/length
+gui_width_fraction = 0.4; % fraction of screen width to occupy
 gui_border = 50; % border from gui to screen edge
 gui_width_px = screen_size_px(3).*gui_width_fraction;
 gui_height_px = gui_width_px/gui_aspect_ratio;
@@ -121,7 +121,7 @@ neuropixels_annotations_present = ~isempty(gui_data.save_path) && ...
 gui_data.menu.preprocess.Enable = raw_images_present;
 [gui_data.menu.preprocess.Children(2:end).Enable] = deal(processed_images_present);
 
-gui_data.menu.atlas.Enable = processed_images_present;
+gui_data.menu.atlas.Children(1(Enable = processed_images_present;
 [gui_data.menu.atlas.Children(2:end).Enable] = deal(processed_images_present & atlas_slices_present);
 
 gui_data.menu.annotation.Enable = atlas_alignment_present;
@@ -129,8 +129,8 @@ gui_data.menu.view.Enable = atlas_alignment_present;
 
 
 % Set text
-image_path_text = sprintf('Raw image path:       %s',gui_data.image_path);
-save_path_text = sprintf('Processing save path: %s',gui_data.save_path);
+image_path_text = sprintf('Raw image path:       %s',strrep(gui_data.image_path,filesep,repmat(filesep,1,2)));
+save_path_text = sprintf('Processing save path: %s',strrep(gui_data.save_path,filesep,repmat(filesep,1,2)));
 
 % Check for present files
 % (images)
@@ -167,13 +167,17 @@ if neuropixels_annotations_present
 else
     annotations_text = '';
 end
-
-gui_text = {image_path_text,save_path_text,' ', ...
-    n_raw_images_text,n_processed_images_text, ' ', ...
-    histology_atlas_text,alignment_text, ' ', ...
+gui_text = { ...
+    '\bf --File paths \rm', ...
+    image_path_text,save_path_text,'\newline', ...
+    '\bf --Images \rm', ...
+    n_raw_images_text,n_processed_images_text, '\newline', ...
+    '\bf --Atlas alignment \rm', ...
+    histology_atlas_text,alignment_text, '\newline', ...
+    '\bf --Annotations \rm', ...
     annotations_text};
 
-set(gui_data.gui_text,'String',gui_text(cellfun(@(x) ~isempty(x),gui_text)));
+set(gui_data.gui_text,'String',gui_text(cellfun(@(x) ~isempty(x),gui_text)))
 
 end
 

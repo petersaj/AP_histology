@@ -3,8 +3,8 @@ function AP_histology
 
 % Set up the gui
 screen_size_px = get(0,'screensize');
-gui_aspect_ratio = 2; % width/length
-gui_width_fraction = 0.3; % fraction of screen width to occupy
+gui_aspect_ratio = 1.5; % width/length
+gui_width_fraction = 0.4; % fraction of screen width to occupy
 gui_border = 50; % border from gui to screen edge
 gui_width_px = screen_size_px(3).*gui_width_fraction;
 gui_height_px = gui_width_px/gui_aspect_ratio;
@@ -118,11 +118,12 @@ neuropixels_annotations_present = ~isempty(gui_data.save_path) && ...
     exist(fullfile(gui_data.save_path,'probe_ccf.mat'),'file');
 
 % Enable/disable appropriate menu options
-gui_data.menu.preprocess.Enable = raw_images_present;
-[gui_data.menu.preprocess.Children(2:end).Enable] = deal(processed_images_present);
+gui_data.menu.preprocess.Enable = raw_images_present | processed_images_present;
+gui_data.menu.preprocess.Children(end).Enable = raw_images_present;
+[gui_data.menu.preprocess.Children(1:end-1).Enable] = deal(processed_images_present);
 
 gui_data.menu.atlas.Enable = processed_images_present;
-[gui_data.menu.atlas.Children(2:end).Enable] = deal(processed_images_present & atlas_slices_present);
+[gui_data.menu.atlas.Children(1:end-1).Enable] = deal(processed_images_present & atlas_slices_present);
 
 gui_data.menu.annotation.Enable = atlas_alignment_present;
 gui_data.menu.view.Enable = atlas_alignment_present;

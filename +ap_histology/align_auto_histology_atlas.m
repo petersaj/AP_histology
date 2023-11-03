@@ -105,28 +105,40 @@ gui_position = [...
     (screen_size_px(3)-gui_width_px)/2, ... % left x
     (screen_size_px(4)-gui_width_px/gui_aspect_ratio)/2, ... % bottom y
     gui_width_px,gui_width_px/gui_aspect_ratio]; % width, height
-figure('color','w','Position',gui_position);
+align_fig = figure('color','w','Position',gui_position);
 
 % (images)
 montage(slice_im); hold on;
-% (binary threshold outline)
-slice_im_binary_boundaries = cellfun(@(x) ...
-    imdilate(x,ones(9))-x,slice_im_binary,'uni',false);
-binary_boundaries_montage = montage(slice_im_binary_boundaries);
-binary_boundaries_montage.AlphaData = binary_boundaries_montage.CData;
-binary_boundaries_montage.CData = padarray(binary_boundaries_montage.CData,[0,0,2],0,'post');
+% % (binary threshold outline)
+% slice_im_binary_boundaries = cellfun(@(x) ...
+%     imdilate(x,ones(9))-x,slice_im_binary,'uni',false);
+% binary_boundaries_montage = montage(slice_im_binary_boundaries);
+% binary_boundaries_montage.AlphaData = binary_boundaries_montage.CData;
+% binary_boundaries_montage.CData = binary_boundaries_montage.CData.*permute([0;1;1],[2,3,1]);
 % (aligned atlas areas)
 aligned_atlas_montage = montage(atlas_align_borders);
 aligned_atlas_montage.AlphaData = aligned_atlas_montage.CData > 0;
-aligned_atlas_montage.CData = padarray(aligned_atlas_montage.CData,[0,0,1],0,'both');
+aligned_atlas_montage.CData = aligned_atlas_montage.CData.*permute([1;0;0],[2,3,1]);
 
-title('Slices, binary threshold (red), aligned atlas slice (green)');
+% Prompt for save
+opts.Default = 'Yes';
+opts.Interpreter = 'tex';
+user_confirm = questdlg('\fontsize{14} Save?','Confirm exit','Yes','No',opts);
+switch user_confirm
+    case 'Yes'
+        % Save
+        save_fn = fullfile(save_path,'atlas2histology_tform.mat');
+        save(save_fn,'atlas2histology_tform');
+        disp(['Saved alignments: ' save_fn]);
+        close(align_fig);
 
-% Save
-save_fn = fullfile(save_path,'atlas2histology_tform.mat');
-save(save_fn,'atlas2histology_tform');
+    case 'No'
+        % Close without saving
+        close(align_fig);
 
-disp(['Finished auto-alignment, saved in ' save_fn]);
+end
+
+
 
 
 
