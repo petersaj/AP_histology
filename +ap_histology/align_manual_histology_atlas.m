@@ -6,6 +6,9 @@ function align_manual_histology_atlas(~,~,histology_toolbar_gui)
 % Initialize guidata
 gui_data = struct;
 
+% Store toolbar handle
+gui_data.histology_toolbar_gui = histology_toolbar_gui;
+
 % Get images (from path in toolbar GUI)
 histology_toolbar_guidata = guidata(histology_toolbar_gui);
 gui_data.save_path = histology_toolbar_guidata.save_path;
@@ -320,6 +323,10 @@ switch user_confirm
         % Do nothing
 
 end   
+
+% Update toolbar GUI
+ap_histology.update_toolbar_gui(gui_data.histology_toolbar_gui);
+
 end
 
 

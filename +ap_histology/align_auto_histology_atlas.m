@@ -138,6 +138,8 @@ switch user_confirm
 
 end
 
+% Update toolbar GUI
+ap_histology.update_toolbar_gui(histology_toolbar_gui);
 
 
 

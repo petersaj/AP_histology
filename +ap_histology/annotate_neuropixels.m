@@ -6,6 +6,9 @@ function annotate_neuropixels(~,~,histology_toolbar_gui)
 % Initialize guidata
 gui_data = struct;
 
+% Store toolbar handle
+gui_data.histology_toolbar_gui = histology_toolbar_gui;
+
 % Load atlas
 allen_atlas_path = fileparts(which('template_volume_10um.npy'));
 if isempty(allen_atlas_path)
@@ -391,6 +394,10 @@ switch user_confirm
         % Do nothing
 
 end
+
+% Update toolbar GUI
+ap_histology.update_toolbar_gui(gui_data.histology_toolbar_gui);
+
 end
 
 
