@@ -266,8 +266,8 @@ switch user_confirm
     case 'Yes'
         % Save and close
 
-        % Get number of probes
-        n_probes = size(gui_data.probe_points_histology,2);
+        % Remove empty probe entries
+        length(probe_ccf)
 
         % Initialize structure to save
         probe_ccf = struct( ...
