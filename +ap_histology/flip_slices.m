@@ -1,4 +1,4 @@
-function flip_reorder_slices(~,~,histology_toolbar_gui)
+function flip_slices(~,~,histology_toolbar_gui)
 % Part of AP_histology toolbox
 %
 % Flip and re-order slice images
@@ -12,7 +12,7 @@ slice_fn = natsortfiles(cellfun(@(path,fn) fullfile(path,fn), ...
 
 slice_im = cell(length(slice_fn),1);
 for curr_slice = 1:length(slice_fn)
-   slice_im{curr_slice} = imread(slice_fn{curr_slice});  
+    slice_im{curr_slice} = imread(slice_fn{curr_slice});
 end
 
 % Pull up slice viewer to scroll through slices with option to flip
@@ -39,9 +39,9 @@ hold on; colormap(gray); axis image off;
 gui_data.histology_im_h = image(gui_data.im{1}, ...
     'Parent',gui_data.histology_ax);
 
-% Create title to write area in
+% Title with directions
 gui_data.histology_ax_title = title(gui_data.histology_ax, ...
-    {'Left/right: change slice','Shift+left/right: re-order slice', ...
+    {'Left/right: change slice', ...
     'Ctrl+arrows: flip'},'FontSize',12);
 
 % Upload gui data
@@ -52,7 +52,6 @@ end
 
 function keypress(gui_fig,eventdata)
 
-shift_on = any(strcmp(eventdata.Modifier,'shift'));
 ctrl_on = any(strcmp(eventdata.Modifier,'control'));
 
 % Get guidata
@@ -64,14 +63,9 @@ gui_data = guidata(gui_fig);
 
 switch eventdata.Key
     case 'leftarrow'
-        if ~shift_on && ~ctrl_on
+        if ~ctrl_on
             gui_data.curr_slice = max(gui_data.curr_slice - 1,1);
             set(gui_data.histology_im_h,'CData',gui_data.im{gui_data.curr_slice})
-            guidata(gui_fig,gui_data);
-        elseif shift_on
-            slice_flip = [gui_data.curr_slice-1,gui_data.curr_slice];
-            gui_data.im(slice_flip) = flip(gui_data.im(slice_flip));
-            gui_data.curr_slice = slice_flip(1);
             guidata(gui_fig,gui_data);
         elseif ctrl_on
             gui_data.im{gui_data.curr_slice} = ...
@@ -81,15 +75,10 @@ switch eventdata.Key
         end
 
     case 'rightarrow'
-        if ~shift_on && ~ctrl_on
+        if ~ctrl_on
             gui_data.curr_slice = ...
                 min(gui_data.curr_slice + 1,length(gui_data.im));
             set(gui_data.histology_im_h,'CData',gui_data.im{gui_data.curr_slice})
-            guidata(gui_fig,gui_data);
-        elseif shift_on
-            slice_flip = [gui_data.curr_slice,gui_data.curr_slice+1];
-            gui_data.im(slice_flip) = flip(gui_data.im(slice_flip));
-            gui_data.curr_slice = slice_flip(2);
             guidata(gui_fig,gui_data);
         elseif ctrl_on
             gui_data.im{gui_data.curr_slice} = ...
@@ -123,7 +112,7 @@ switch user_confirm
         for curr_im = 1:length(gui_data.im)
             imwrite(gui_data.im{curr_im},gui_data.slice_fn{curr_im},'tif');
         end
-        disp('Saved flipped and re-ordered slice images');
+        disp('Saved flipped slice images');
         delete(gui_fig)
 
     case 'No'
