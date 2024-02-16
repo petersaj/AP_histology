@@ -56,8 +56,11 @@ Draw reference line (e.g. the midline):
 
 These reference lines will used to centered and rotate the slice images, which are then saved.
 
-### Flip and re-order slices
-Images can be flipped (left/right or up/down) and re-ordered, then saved.
+### Re-order slices
+Images can be re-ordered (click to select order)
+
+### Flip slices
+Images can be flipped (left/right or up/down)
 
 ## Atlas alignment
 
