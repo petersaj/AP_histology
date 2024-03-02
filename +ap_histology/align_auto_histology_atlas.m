@@ -118,7 +118,7 @@ montage(slice_im); hold on;
 % (aligned atlas areas)
 aligned_atlas_montage = montage(atlas_align_borders);
 aligned_atlas_montage.AlphaData = aligned_atlas_montage.CData > 0;
-aligned_atlas_montage.CData = aligned_atlas_montage.CData.*permute([1;0;0],[2,3,1]);
+aligned_atlas_montage.CData = double(aligned_atlas_montage.CData).*permute([1;0;0],[2,3,1]);
 
 % Prompt for save
 opts.Default = 'Yes';
