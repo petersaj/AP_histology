@@ -160,8 +160,6 @@ curr_slice_im = gui_data.slice_im{gui_data.curr_slice};
 
 % Align current atlas slice and get boundaries
 curr_av_slice_warp = gui_data.histology_aligned_av_slices{gui_data.curr_slice};
-% (set 0 = 1 - both are outside of brain)
-curr_av_slice_warp(curr_av_slice_warp == 0) = 1;
 av_warp_boundaries = boundarymask(curr_av_slice_warp);
 gui_data.curr_av_warp_boundaries = av_warp_boundaries;
 

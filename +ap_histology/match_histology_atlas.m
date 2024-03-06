@@ -177,7 +177,58 @@ switch eventdata.Key
                 
         update_histology_slice(gui_fig);
         title(gui_data.histology_ax,'New saved atlas position');
-        
+
+    case 't'
+        %%%% TESTING
+
+        disp('testing alignment');
+
+        % Set optimizer
+        [optimizer, metric] = imregconfig('multimodal');
+        optimizer.MaximumIterations = 200;
+        optimizer.GrowthFactor = 1+1e-3;
+        optimizer.InitialRadius = 1e-3;
+
+        curr_histology_slice = max(gui_data.histology_im_h.CData,[],3);
+        curr_atlas_slice = gui_data.atlas_slice_plot.CData;
+
+        % Resize atlas outline to approximately match histology, affine-align
+        resize_factor = min(size(curr_histology_slice)./size(curr_atlas_slice));
+        curr_atlas_slice_resize = imresize(curr_atlas_slice,resize_factor,'nearest');
+
+        % Do alignment on downsampled sillhouettes (faster and more accurate)
+        downsample_factor = 3;
+
+        tformEstimate_affine_resized = ...
+            imregtform( ...
+            imresize(curr_atlas_slice_resize,1/downsample_factor,'nearest'), ...
+            imresize(curr_histology_slice,1/downsample_factor,'nearest'), ...
+            'affine',optimizer,metric,'PyramidLevels',3);
+
+        % Set final transform (scale to histology, downscale, affine, upscale)
+        scale_match = eye(3).*[repmat(resize_factor,2,1);1];
+        scale_align_down = eye(3).*[repmat(1/downsample_factor,2,1);1];
+        scale_align_up = eye(3).*[repmat(downsample_factor,2,1);1];
+
+        tformEstimate_affine = tformEstimate_affine_resized;
+        tformEstimate_affine.T = scale_match*scale_align_down* ...
+            tformEstimate_affine_resized.T*scale_align_up;
+
+        a = imwarp(curr_atlas_slice,tformEstimate_affine,'nearest', ...
+            'Outputview',imref2d(size(curr_histology_slice)));
+
+       
+        figure;tiledlayout('flow');
+%         nexttile;
+%         imshowpair(mat2gray(a),mat2gray(curr_histology_slice));
+%         axis image;
+        nexttile;
+        a2 = boundarymask(a);
+        curr_overlay = imoverlay(curr_histology_slice,a2,'r');
+        imagesc(curr_overlay);
+        axis image;
+
+
 end
 
 end

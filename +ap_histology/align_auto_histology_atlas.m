@@ -80,7 +80,7 @@ for curr_slice = 1:length(slice_im)
         tformEstimate_affine_resized.T*scale_align_up;
 
     % Store the affine matrix and plot the transform
-    atlas2histology_tform{curr_slice} = tformEstimate_affine.T;
+    atlas2histology_tform{curr_slice} = tformEstimate_affine;
 
     % Get aligned atlas areas
     curr_av_aligned = imwarp(histology_ccf(curr_slice).av_slices,tformEstimate_affine,'nearest', ...

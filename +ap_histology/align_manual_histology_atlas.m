@@ -219,13 +219,12 @@ gui_data = guidata(gui_fig);
 
 if size(gui_data.histology_control_points{gui_data.curr_slice},1) == ...
         size(gui_data.atlas_control_points{gui_data.curr_slice},1) && ...
-        (size(gui_data.histology_control_points{gui_data.curr_slice},1) >= 3 && ...
-        size(gui_data.atlas_control_points{gui_data.curr_slice},1) >= 3)
+        (size(gui_data.histology_control_points{gui_data.curr_slice},1) >= 4 && ...
+        size(gui_data.atlas_control_points{gui_data.curr_slice},1) >= 4)
     % If same number of >= 3 control points, use control point alignment
-    tform = fitgeotrans(gui_data.atlas_control_points{gui_data.curr_slice}, ...
-        gui_data.histology_control_points{gui_data.curr_slice},'affine');
+    tform = fitgeotform2d(gui_data.atlas_control_points{gui_data.curr_slice}, ...
+        gui_data.histology_control_points{gui_data.curr_slice},'pwl');
     title(gui_data.histology_ax,'New alignment');
-
 
 elseif size(gui_data.histology_control_points{gui_data.curr_slice},1) >= 1 ||  ...
         size(gui_data.atlas_control_points{gui_data.curr_slice},1) >= 1
@@ -238,9 +237,9 @@ elseif size(gui_data.histology_control_points{gui_data.curr_slice},1) >= 1 ||  .
 
 elseif isfield(gui_data,'histology_ccf_auto_alignment')
     % If no points, use automated outline if available
-    tform = affine2d;
-    tform.T = gui_data.histology_ccf_auto_alignment{gui_data.curr_slice};
+    tform = gui_data.histology_ccf_auto_alignment{gui_data.curr_slice};
     title(gui_data.histology_ax,'Previous alignment');
+
 else
     % If nothing available, use identity transform
     tform = affine2d;
@@ -260,8 +259,8 @@ set(gui_data.histology_aligned_atlas_boundaries, ...
     'CData',av_warp_boundaries, ...
     'AlphaData',av_warp_boundaries*0.3);
 
-% Update transform matrix
-gui_data.histology_ccf_manual_alignment{gui_data.curr_slice} = tform.T;
+% Update stored transform
+gui_data.histology_ccf_manual_alignment{gui_data.curr_slice} = tform;
 
 % Upload gui data
 guidata(gui_fig, gui_data);
