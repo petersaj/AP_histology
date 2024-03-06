@@ -50,8 +50,7 @@ for curr_slice = 1:length(gui_data.slice_im)
     curr_av_slice(isnan(curr_av_slice)) = 1;
     curr_slice_im = gui_data.slice_im{curr_slice};
 
-    tform = affine2d;
-    tform.T = gui_data.histology_ccf_alignment{curr_slice};
+    tform = gui_data.histology_ccf_alignment{curr_slice};
     tform_size = imref2d([size(curr_slice_im,1),size(curr_slice_im,2)]);
     gui_data.histology_aligned_av_slices{curr_slice} = ...
         imwarp(curr_av_slice,tform,'nearest','OutputView',tform_size);
@@ -279,14 +278,11 @@ switch user_confirm
             for curr_slice = find(~cellfun(@isempty,gui_data.probe_points_histology(:,curr_probe)'))
 
                 % Transform histology to atlas slice
-                tform = affine2d;
-                tform.T = gui_data.histology_ccf_alignment{curr_slice};
-                % (transform is CCF -> histology, invert for other direction)
-                tform = invert(tform);
+                tform = gui_data.histology_ccf_alignment{curr_slice};
 
                 % Transform and round to nearest index
                 [probe_points_atlas_x,probe_points_atlas_y] = ...
-                    transformPointsForward(tform, ...
+                    transformPointsInverse(tform, ...
                     gui_data.probe_points_histology{curr_slice,curr_probe}(:,1), ...
                     gui_data.probe_points_histology{curr_slice,curr_probe}(:,2));
 
