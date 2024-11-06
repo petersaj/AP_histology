@@ -57,6 +57,11 @@ gui_data.menu.view = uimenu(histology_toolbar_gui,'Text','View');
 uimenu(gui_data.menu.view,'Text','View aligned histology','MenuSelectedFcn', ...
     {@ap_histology.view_aligned_histology,histology_toolbar_gui});
 
+% Export menu
+gui_data.menu.export = uimenu(histology_toolbar_gui,'Text','Export');
+uimenu(gui_data.menu.export,'Text','Export track pts to npy','MenuSelectedFcn', ...
+    {@ap_histology.export_probe_ccf_to_npy,histology_toolbar_gui});
+
 % Create GUI variables
 gui_data.image_path = char;
 gui_data.save_path = char;
@@ -95,6 +100,10 @@ gui_data = guidata(histology_toolbar_gui);
 
 % Pick image path
 gui_data.save_path = uigetdir([],'Select path to save processing');
+
+if gui_data.image_path == 0
+    gui_data.image_path = gui_data.save_path
+end
 
 % Store guidata
 guidata(histology_toolbar_gui,gui_data);
