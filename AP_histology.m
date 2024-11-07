@@ -81,9 +81,12 @@ gui_data = guidata(histology_toolbar_gui);
 
 % Pick image path
 gui_data.image_path = uigetdir([],'Select path with raw images');
+if gui_data.image_path == 0
+    gui_data.image_path = '';
+end
 
 % Clear processed path (if there's one selected)
-gui_data.save_path = [];
+gui_data.save_path = '';
 
 % Store guidata
 guidata(histology_toolbar_gui,gui_data);
@@ -100,9 +103,8 @@ gui_data = guidata(histology_toolbar_gui);
 
 % Pick image path
 gui_data.save_path = uigetdir([],'Select path to save processing');
-
-if gui_data.image_path == 0
-    gui_data.image_path = gui_data.save_path
+if gui_data.save_path == 0
+    gui_data.save_path = '';
 end
 
 % Store guidata
