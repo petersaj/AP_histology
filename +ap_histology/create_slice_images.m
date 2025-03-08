@@ -54,8 +54,7 @@ if ~im_is_rgb
     end
     close(h);
     
-    % Estimate white balance within each channel
-    % (dirty: assume one peak for background, one for signal)
+    % Set/choose white contrast for each channel
     h = figure;
     im_montage = cell(n_channels,1);
     channel_caxis = nan(n_channels,2);
@@ -65,33 +64,15 @@ if ~im_is_rgb
         curr_montage = montage(im_resized(:,curr_channel));
         
         im_montage{curr_channel} = curr_montage.CData;
-        
-        im_hist = histcounts(im_montage{curr_channel}(im_montage{curr_channel} > 0),0:max(im_montage{curr_channel}(:)));
-        im_hist_smoothed = smooth(im_hist,50,'loess');
-        im_hist_deriv = [0;diff(im_hist_smoothed)];
-        
-        % The signal minimum is the valley between background and signal
-        [~,bg_down] = min(im_hist_deriv);
-        bg_signal_min = find(im_hist_deriv(bg_down:end) > 0,1) + bg_down;
-        % The signal maximum is < 1% median value
-        [~,bg_median_rel] = max(im_hist_smoothed(bg_signal_min:end));
-        signal_median = bg_median_rel + bg_signal_min - 1;
-        signal_high_cutoff = im_hist_smoothed(signal_median)*0.01;
-        signal_high_rel = find(im_hist_smoothed(signal_median:end) < signal_high_cutoff,1);
-        signal_high = signal_high_rel + signal_median;
-        % (if no < 1%, just take max)
-        if(isempty(signal_high))
-            signal_high = length(im_hist_smoothed);
-        end
-        
-        cmin = bg_signal_min;
-        cmax = signal_high;
-        caxis([cmin,cmax]);
+
+        cmin = prctile(curr_montage.CData,0,'all');
+        cmax = prctile(curr_montage.CData,100,'all');
+        clim([cmin,cmax]);
         
         check_contrast = questdlg('Contrast ok?','Set contrast','Yes','Manual','Yes');
         if strcmp(check_contrast,'Manual')
             waitfor(imcontrast(gcf));
-            [cmin,cmax] = caxis;
+            [cmin,cmax] = clim;
         end
         
         channel_caxis(curr_channel,:) = [cmin,cmax];
