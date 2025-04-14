@@ -6,6 +6,12 @@ function gui_fig = histology_scroll(image_path,channel_colors)
 % Viewer for histology
 % fold into AP_histology
 
+%% Pick directory if none input
+
+if isempty(image_path)
+    image_path = uigetdir;
+end
+
 %% Set up gui data structure
 
 gui_data = struct;
@@ -155,11 +161,19 @@ if ~exist(AP_histology_processing_fn,'file')
     load(AP_histology_processing_fn);
 end
 
+% Check for processed re-ordering
+if exist('AP_histology_processing','var') && ...
+        isfield(AP_histology_processing,'image_order')
+    curr_im = AP_histology_processing.image_order(gui_data.curr_im);
+else
+    curr_im = gui_data.curr_im;
+end
+
 % Set color and color limit
 color_vector = permute(gui_data.colors,[3,4,1,2]);
 clim_permute = permute(gui_data.clim,[2,3,1]);
 
-im_rescaled = double(min(max(gui_data.data{gui_data.curr_im} - ...
+im_rescaled = double(min(max(gui_data.data{curr_im} - ...
     clim_permute(1,1,:),0),clim_permute(2,1,:)))./ ...
     double(clim_permute(2,1,:));
 
@@ -175,22 +189,21 @@ if exist('AP_histology_processing','var')
         target_angle = round(nanmean(AP_histology_processing.rotation_angle)/90)*90;
         target_position = nanmean(AP_histology_processing.translation_center,1);
 
-        angle_diff = target_angle - AP_histology_processing.rotation_angle(gui_data.curr_im);
-        x_diff = target_position(1) - AP_histology_processing.translation_center(gui_data.curr_im,1);
-        y_diff = target_position(2) - AP_histology_processing.translation_center(gui_data.curr_im,2);
+        angle_diff = target_angle - AP_histology_processing.rotation_angle(curr_im);
+        x_diff = target_position(1) - AP_histology_processing.translation_center(curr_im,1);
+        y_diff = target_position(2) - AP_histology_processing.translation_center(curr_im,2);
 
         im_display = imrotate(imtranslate(im_display,[x_diff,y_diff]),angle_diff,'nearest','crop');
     end
 
     % Flip
     if isfield(AP_histology_processing,'flip')
-        if AP_histology_processing.flip(gui_data.curr_im,1)
+        if AP_histology_processing.flip(curr_im,1)
             im_display = flipud(im_display);
         end
-        if AP_histology_processing.flip(gui_data.curr_im,2)
+        if AP_histology_processing.flip(curr_im,2)
             im_display = fliplr(im_display);
         end
-
     end
 end
 
