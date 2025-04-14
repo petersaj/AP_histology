@@ -43,9 +43,6 @@ load(histology_toolbar_guidata.histology_processing_filename);
 AP_histology_processing.flip(histology_scroll_guidata.curr_im,1) = true;
 save(histology_toolbar_guidata.histology_processing_filename,'AP_histology_processing');
 
-% Update histology image
-histology_scroll_guidata.update([],[],histology_toolbar_guidata.histology_scroll);
-
 end
 
 function slice_fliplr(~,~,histology_toolbar_gui)
@@ -58,11 +55,8 @@ histology_scroll_guidata = guidata(histology_toolbar_guidata.histology_scroll);
 
 % Set flip flag, save
 load(histology_toolbar_guidata.histology_processing_filename);
-AP_histology_processing.flip(histology_scroll_guidata.curr_im,2) = true;
+AP_histology_processing.flip(histology_scroll_guidata.curr_im,1) = true;
 save(histology_toolbar_guidata.histology_processing_filename,'AP_histology_processing');
-
-% Update histology image
-histology_scroll_guidata.update([],[],histology_toolbar_guidata.histology_scroll);
 
 end
 
