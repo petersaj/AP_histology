@@ -8,7 +8,7 @@ function [atlas_slice,atlas_coords] = grab_atlas_slice(av,tv,atlas_vector,atlas_
 % tv - average volume atlas
 % atlas_vector - unit vector giving view direction on atlas
 % atlas_point - a 3D point for the slice plane to intersect
-% point_spacing - the spacing of coordinates to return
+% point_spacing - the spacing of coordinates to return (high-res vs fast)
 %
 % OUTPUTS: 
 % atlas_slice.av/.tv: slice through each atlas

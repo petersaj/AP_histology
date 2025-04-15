@@ -3,45 +3,58 @@ function align_auto_histology_atlas_v2(~,~,histology_toolbar_gui)
 %
 % Auto aligns histology slices and matched CCF slices by outline registration
 
-% Get images (from path in toolbar GUI)
+% Get gui data
 histology_toolbar_guidata = guidata(histology_toolbar_gui);
-save_path = histology_toolbar_guidata.save_path;
+histology_scroll_data = guidata(histology_toolbar_guidata.histology_scroll);
 
-slice_dir = dir(fullfile(save_path,'*.tif'));
-slice_fn = natsortfiles(cellfun(@(path,fn) fullfile(path,fn), ...
-    {slice_dir.folder},{slice_dir.name},'uni',false));
+% Grab slice images from histology scroller
+bw_clim = [min(histology_scroll_data.clim(:,1)), ...
+    max(histology_scroll_data.clim(:,2))];
 
-slice_im = cell(length(slice_fn),1);
-for curr_slice = 1:length(slice_fn)
-    slice_im{curr_slice} = imread(slice_fn{curr_slice});
+slice_histology = cell(size(histology_scroll_data.data));
+for curr_slice = 1:length(histology_scroll_data.data)
+    curr_slice_chanmax = max(histology_scroll_data.data{curr_slice},[],3);
+    
+    slice_histology{curr_slice} = ...
+        min(max(curr_slice_chanmax-bw_clim(1),0),diff(bw_clim));
 end
 
-% Load corresponding CCF slices
-ccf_slice_fn = fullfile(save_path,'histology_ccf.mat');
-load(ccf_slice_fn);
+% Load atlas
+allen_atlas_path = fileparts(which('template_volume_10um.npy'));
+if isempty(allen_atlas_path)
+    error('No CCF atlas found (add CCF atlas to path)')
+end
+disp('Loading Allen CCF atlas...')
+tv = readNPY(fullfile(allen_atlas_path,'template_volume_10um.npy'));
+av = readNPY(fullfile(allen_atlas_path,'annotation_volume_10um_by_index.npy'));
+st = ap_histology.loadStructureTree(fullfile(allen_atlas_path,'structure_tree_safe_2017.csv'));
+disp('Done.')
+
+% Get atlas images
+load(histology_toolbar_guidata.histology_processing_filename);
+
+slice_atlas = struct('tv',cell(size(histology_scroll_data.data)), 'av',cell(size(histology_scroll_data.data)));
+for curr_slice = 1:length(histology_scroll_data.data)
+    slice_atlas(curr_slice) = ...
+        ap_histology.grab_atlas_slice(av,tv, ...
+        AP_histology_processing.histology_ccf.slice_vector, ...
+        AP_histology_processing.histology_ccf.slice_points(curr_slice,:), 1);
+end
 
 % Binarize slices (only necessary if aligning outlines)
-slice_im_flat = cellfun(@(x) max(x,[],3),slice_im,'uni',false);
-slice_thresh = graythresh(cell2mat(cellfun(@(x) reshape(x(x~=0),[],1),slice_im_flat,'uni',false)));
-slice_thresh_adjust = slice_thresh + (1-slice_thresh)*0.8;
-slice_im_binary = cellfun(@(x) imbinarize(x,slice_thresh_adjust),slice_im_flat,'uni',false);
-% (flip sign if brightfield)
-brightfield_flag = mode(round(cell2mat(cellfun(@(x) ...
-    reshape(x,[],1),slice_im_flat,'uni',false)))) > 100;
-if brightfield_flag
-    slice_im_binary = cellfun(@not,slice_im_binary,'uni',false);
-end
+slice_thresh = graythresh(cell2mat(cellfun(@(x) reshape(x(x~=0),[],1),slice_histology,'uni',false)));
+slice_histology_binary = cellfun(@(x) imbinarize(x,slice_thresh),slice_histology,'uni',false);
 
 % Align outlines of histology/atlas slices
-atlas_align_borders = cell(size(slice_im));
-atlas2histology_tform = cell(size(slice_im));
+atlas_align_borders = cell(size(slice_histology));
+atlas2histology_tform = cell(size(slice_histology));
 
 waitbar_h = waitbar(0,'Aligning atlas/histology slices...');
-for curr_slice = 1:length(slice_im)
+for curr_slice = 1:length(slice_histology)
 
     % To align anatomy:
-    curr_histology_slice = slice_im_flat{curr_slice};
-    curr_atlas_slice = histology_ccf(curr_slice).tv_slices;
+    curr_histology_slice = slice_histology{curr_slice};
+    curr_atlas_slice = slice_atlas(curr_slice).tv;
     curr_atlas_slice(isnan(curr_atlas_slice)) = 0;
     [optimizer, metric] = imregconfig('multimodal');
     optimizer.MaximumIterations = 200;
@@ -49,7 +62,7 @@ for curr_slice = 1:length(slice_im)
     optimizer.InitialRadius = 1e-3;
 
 %     % To align outlines:
-%     curr_histology_slice = +slice_im_binary{curr_slice};
+%     curr_histology_slice = +slice_histology_binary{curr_slice};
 %     curr_atlas_slice = +(histology_ccf(curr_slice).av_slices > 1);
 %     [optimizer, metric] = imregconfig('monomodal');
 %     optimizer.MaximumIterations = 200;
@@ -61,7 +74,7 @@ for curr_slice = 1:length(slice_im)
     resize_factor = min(size(curr_histology_slice)./size(curr_atlas_slice));
     curr_atlas_slice_resize = imresize(curr_atlas_slice,resize_factor,'nearest');
 
-    % Do alignment on downsampled sillhouettes (faster and more accurate)
+    % Do alignment on downsampled images (faster and more accurate)
     downsample_factor = 5;
 
     tformEstimate_affine_resized = ...
@@ -83,14 +96,13 @@ for curr_slice = 1:length(slice_im)
     atlas2histology_tform{curr_slice} = tformEstimate_affine;
 
     % Get aligned atlas areas
-    curr_av_aligned = imwarp(histology_ccf(curr_slice).av_slices,tformEstimate_affine,'nearest', ...
+    curr_av_aligned = imwarp(slice_atlas(curr_slice).av,tformEstimate_affine,'nearest', ...
         'Outputview',imref2d(size(curr_histology_slice)));
-    atlas_align_borders{curr_slice} = ...
-        round(conv2(curr_av_aligned,ones(3)./9,'same')) ~= curr_av_aligned;
+    atlas_align_borders{curr_slice} = boundarymask(max(0,curr_av_aligned));
 
-    waitbar(curr_slice/length(slice_im),waitbar_h, ...
+    waitbar(curr_slice/length(slice_histology),waitbar_h, ...
         sprintf('Aligning atlas/histology slices: %d/%d', ...
-        curr_slice,length(slice_im)));
+        curr_slice,length(slice_histology)));
 
 end
 
@@ -108,11 +120,11 @@ gui_position = [...
 align_fig = figure('color','w','Position',gui_position);
 
 % (images)
-montage(slice_im); hold on;
+montage(slice_histology); hold on;
 % % (binary threshold outline)
-% slice_im_binary_boundaries = cellfun(@(x) ...
-%     imdilate(x,ones(9))-x,slice_im_binary,'uni',false);
-% binary_boundaries_montage = montage(slice_im_binary_boundaries);
+% slice_histology_binary_boundaries = cellfun(@(x) ...
+%     imdilate(x,ones(9))-x,slice_histology_binary,'uni',false);
+% binary_boundaries_montage = montage(slice_histology_binary_boundaries);
 % binary_boundaries_montage.AlphaData = binary_boundaries_montage.CData;
 % binary_boundaries_montage.CData = binary_boundaries_montage.CData.*permute([0;1;1],[2,3,1]);
 % (aligned atlas areas)
