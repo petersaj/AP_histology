@@ -209,6 +209,9 @@ end
 
 gui_data.im_h.CData = im_display;
 
+% Ensure image scrollbar matches image number (if update called externally)
+gui_data.scrollbar_image.Value = gui_data.curr_im;
+
 end
 
 

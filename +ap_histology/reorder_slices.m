@@ -96,7 +96,9 @@ histology_toolbar_guidata = guidata(gui_data.histology_toolbar_gui);
 
 % Load processing and save re-ordering
 load(histology_toolbar_guidata.histology_processing_filename);
+
 AP_histology_processing.image_order = gui_data.slice_idx;
+
 save(histology_toolbar_guidata.histology_processing_filename,'AP_histology_processing');
 
 end

@@ -18,7 +18,6 @@ fliplr_button = uicontrol('style','pushbutton','units','normalized', ...
     'Position',[0.5,0,0.5,1],'String','Flip L/R', ...
     'Callback',{@slice_fliplr,histology_toolbar_gui});
 
-
 histology_scroll_guidata = guidata(histology_toolbar_guidata.histology_scroll);
 
 % Initialize flip flag
