@@ -214,7 +214,7 @@ switch eventdata.Key
         %%%% WORKS - FINALIZE
         disp('testing interpolation');
 
-        % Interpolate from 1:N slices, put back in image order
+        % Interpolate from 1:N
         [~,image_order_idx] = ismember((1:size(gui_data.slice_points,1))',gui_data.image_order);
 
         saved_slice_points = ~any(isnan(gui_data.slice_points),2);
