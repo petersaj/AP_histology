@@ -6,54 +6,12 @@ function gui_fig = histology_scroll(image_path,channel_colors)
 % Viewer for histology
 % fold into AP_histology
 
-%% Pick directory if none input
 
-if isempty(image_path)
-    image_path = uigetdir;
-end
-
-%% Set up gui data structure
+%% Create gui data structure
 
 gui_data = struct;
-gui_data.image_path = image_path;
-
-%% Load images
-
-image_dir = dir(fullfile(image_path,'*.tif'));
-
-image_filenames = cellfun(@(path,name) fullfile(path,name), ...
-    {image_dir.folder},{image_dir.name},'uni',false);
-[~,sort_idx] = natsortfiles(image_filenames);
-
-% Load images
-waitbar_h = waitbar(0);
-images = cell(size(image_dir));
-for curr_im = 1:length(sort_idx)
-    waitbar(curr_im/length(sort_idx),waitbar_h, ...
-        sprintf('Loading images (%d/%d)',curr_im,length(sort_idx)));
-
-    images{curr_im} = tiffreadVolume( ...
-        image_filenames{sort_idx(curr_im)});
-end
-close(waitbar_h);
-
-gui_data.data = images;
-gui_data.curr_im = 1;
 
 %% Create GUI
-
-% Get number of channels and color limits
-n_channels = size(images{1},3);
-clim_min = squeeze(min(cell2mat(cellfun(@(x) min(x,[],[1,2]),images,'uni',false)),[],1));
-clim_max = squeeze(max(cell2mat(cellfun(@(x) max(x,[],[1,2]),images,'uni',false)),[],1));
-
-gui_data.clim = [clim_min,clim_max];
-
-if ~exist('channel_colors','var') || isempty(channel_colors)
-    % Default channel colors to RGB
-    channel_colors = [1,0,0;0,1,0;0,0,1];
-end
-gui_data.colors = channel_colors(1:n_channels,:);
 
 % Create figure for scrolling and ROIs
 fig_position = [0.025,0.15,0.3,0.7];
@@ -75,16 +33,34 @@ toolbar_pan_h = findobj(toolbar_h.Children,'Tag','Exploration.Pan');
 delete(setdiff(toolbar_h.Children,[toolbar_zoomin_h,toolbar_zoomout_h,toolbar_pan_h]));
 set(groot,'ShowHiddenHandles','off');
 
-%%%%%%%% Menus
+%%%%%%%% Menus WORKING HERE
 
-% Test menu
-gui_data.menu.preprocess = uimenu(gui_fig,'Text','Menu');
-
-uimenu(gui_data.menu.preprocess,'Text','Menu option 1','MenuSelectedFcn', ...
-    {@(x) [],gui_fig});
-
-uimenu(gui_data.menu.preprocess,'Text','Load aligned atlas','MenuSelectedFcn', ...
+% Image menu
+gui_data.menu.images = uimenu(gui_fig,'Text','Images');
+uimenu(gui_data.menu.images,'Text','Open images','MenuSelectedFcn', ...
+    {@load_images,gui_fig});
+uimenu(gui_data.menu.images,'Text','Load aligned atlas','MenuSelectedFcn', ...
     {@load_aligned_atlas,gui_fig});
+
+% Preprocessing menu
+gui_data.menu.preprocess = uimenu(gui_fig,'Text','Image preprocessing');
+uimenu(gui_data.menu.preprocess,'Text','Create slice images','MenuSelectedFcn', ...
+    {@ap_histology.create_slice_images,gui_fig},'enable','off');
+uimenu(gui_data.menu.preprocess,'Text','Rotate & center slices','MenuSelectedFcn', ...
+    {@ap_histology.rotate_center_slices,gui_fig});
+uimenu(gui_data.menu.preprocess,'Text','Flip slices','MenuSelectedFcn', ...
+    {@ap_histology.flip_slices,gui_fig});
+uimenu(gui_data.menu.preprocess,'Text','Re-order slices','MenuSelectedFcn', ...
+    {@ap_histology.reorder_slices,gui_fig});
+
+% Atlas menu
+gui_data.menu.atlas = uimenu(gui_fig,'Text','Atlas alignment');
+uimenu(gui_data.menu.atlas,'Text','Choose histology atlas slices','MenuSelectedFcn', ...
+    {@ap_histology.match_histology_atlas_v2,gui_fig});
+uimenu(gui_data.menu.atlas,'Text','Auto-align histology/atlas slices','MenuSelectedFcn', ...
+    {@ap_histology.align_auto_histology_atlas_v2,gui_fig});
+uimenu(gui_data.menu.atlas,'Text','Manual align histology/atlas slices','MenuSelectedFcn', ...
+    {@ap_histology.align_manual_histology_atlas,gui_fig});
 
 %%%%%%%%%% 
 
@@ -94,9 +70,7 @@ scrollbar_label_width = 0.1;
 
 % (image scrollbar)
 ypos = [scrollbar_label_width, 0*scrollbar_height, 1-scrollbar_label_width, scrollbar_height];
-gui_data.scrollbar_image = uicontrol('style','slider','units','normalized', ...
-    'position',ypos,'min',1,'max',length(images),'value',1, ...
-    'sliderstep',repmat(1/length(images),1,2));
+gui_data.scrollbar_image = uicontrol('style','slider','units','normalized','position',ypos);
 set(gui_data.scrollbar_image,'Callback',{@scrollbar_image_listener, gui_fig});
 uicontrol('style','text','units','normalized', ...
     'position',[0,ypos(2),scrollbar_label_width,ypos(4)], ...
@@ -104,10 +78,8 @@ uicontrol('style','text','units','normalized', ...
 
 % (channel scrollbar)
 ypos = [scrollbar_label_width, 1*scrollbar_height, 1-scrollbar_label_width, scrollbar_height];
-gui_data.scrollbar_channel = uicontrol('style','slider','units','normalized', ...
-    'position',ypos,'min',1,'max',n_channels,'value',1, ...
-    'sliderstep',repmat(1/(n_channels-1),1,2));
-gui_data.scrollbar_channel.BackgroundColor = gui_data.colors(1,:);
+gui_data.scrollbar_channel = uicontrol('style','slider','units','normalized','position',ypos);
+gui_data.scrollbar_channel.BackgroundColor = 'g';
 set(gui_data.scrollbar_channel,'Callback',{@scrollbar_channel_listener, gui_fig});
 uicontrol('style','text','units','normalized', ...
     'position',[0,ypos(2),scrollbar_label_width,ypos(4)], ...
@@ -115,9 +87,7 @@ uicontrol('style','text','units','normalized', ...
 
 % (white scrollbar)
 ypos = [scrollbar_label_width, 2*scrollbar_height, 1-scrollbar_label_width, scrollbar_height];
-gui_data.scrollbar_white = uicontrol('style','slider','units','normalized', ...
-    'position',ypos,'min',0,'max',max(clim_max),'value',max(gui_data.clim(:,2)), ...
-    'sliderstep',repmat(1/double(max(gui_data.clim(:,2))),1,2));
+gui_data.scrollbar_white = uicontrol('style','slider','units','normalized','position',ypos);
 gui_data.scrollbar_white.BackgroundColor = 'w';
 set(gui_data.scrollbar_white,'Callback',{@scrollbar_white_listener, gui_fig});
 uicontrol('style','text','units','normalized', ...
@@ -126,9 +96,7 @@ uicontrol('style','text','units','normalized', ...
 
 % (black scrollbar)
 ypos = [scrollbar_label_width, 3*scrollbar_height, 1-scrollbar_label_width, scrollbar_height];
-gui_data.scrollbar_black = uicontrol('style','slider','units','normalized', ...
-    'position',ypos,'min',0,'max',max(clim_max),'value',0, ...
-    'sliderstep',repmat(1/double(max(gui_data.clim(:,2))),1,2));
+gui_data.scrollbar_black = uicontrol('style','slider','units','normalized','position',ypos);
 gui_data.scrollbar_black.BackgroundColor = 'k';
 set(gui_data.scrollbar_black,'Callback',{@scrollbar_black_listener, gui_fig});
 uicontrol('style','text','units','normalized', ...
@@ -146,11 +114,85 @@ gui_data.update = @update_image;
 % Update gui data
 guidata(gui_fig,gui_data);
 
+end
+
+function load_images(currentObject, eventdata, gui_fig)
+
+% Get guidata
+gui_data = guidata(gui_fig);
+
+% Pick image path
+gui_data.image_path = uigetdir([],'Select path with raw images');
+if gui_data.image_path == 0
+    return
+end
+
+% Set save filename, create file if it doesn't exist
+gui_data.histology_processing_filename = fullfile(gui_data.image_path,'AP_histology_processing.mat');
+
+if ~exist(gui_data.histology_processing_filename,'file')
+    AP_histology_processing = struct;
+    save(gui_data.histology_processing_filename,'AP_histology_processing');
+end
+
+% Load images
+image_dir = dir(fullfile(gui_data.image_path,'*.tif'));
+image_filenames = cellfun(@(path,name) fullfile(path,name), ...
+    {image_dir.folder},{image_dir.name},'uni',false);
+[~,sort_idx] = natsortfiles(image_filenames);
+
+waitbar_h = waitbar(0);
+images = cell(size(image_dir));
+for curr_im = 1:length(sort_idx)
+    waitbar(curr_im/length(sort_idx),waitbar_h, ...
+        sprintf('Loading images (%d/%d)',curr_im,length(sort_idx)));
+
+    images{curr_im} = tiffreadVolume( ...
+        image_filenames{sort_idx(curr_im)});
+end
+close(waitbar_h);
+
+% Get number of channels, color limits, colors
+n_channels = size(images{1},3);
+clim_min = squeeze(min(cell2mat(cellfun(@(x) min(x,[],[1,2]),images,'uni',false)),[],1));
+clim_max = squeeze(max(cell2mat(cellfun(@(x) max(x,[],[1,2]),images,'uni',false)),[],1));
+gui_data.clim = [clim_min,clim_max];
+
+if ~exist('channel_colors','var') || isempty(channel_colors)
+    % Default channel colors to RGB
+    channel_colors = [1,0,0;0,1,0;0,0,1];
+end
+gui_data.colors = channel_colors(1:n_channels,:);
+
+% Set scrollbar properties
+set(gui_data.scrollbar_image, ...
+    'min',1,'max',length(images),'value',1, ...
+    'sliderstep',repmat(1/(length(images)-1),1,2));
+
+set(gui_data.scrollbar_channel, ...
+    'min',1,'max',n_channels,'value',1, ...
+    'sliderstep',repmat(1/(n_channels-1),1,2), ...
+    'backgroundcolor',gui_data.colors(1,:));
+
+set(gui_data.scrollbar_white, ...
+    'min',0,'max',max(clim_max),'value',max(gui_data.clim(:,2)), ...
+    'sliderstep',repmat(1/double(max(gui_data.clim(:,2))),1,2));
+
+set(gui_data.scrollbar_black, ...
+    'min',0,'max',max(clim_max),'value',0, ...
+    'sliderstep',repmat(1/double(max(gui_data.clim(:,2))),1,2));
+
+% Package data
+gui_data.data = images;
+gui_data.curr_im = 1;
+
+% Store guidata
+guidata(gui_fig,gui_data);
+
 % Update first image
 update_image([], [], gui_fig);
 
 end
-
 
 
 function update_image(currentObject, eventdata, gui_fig)
@@ -185,6 +227,12 @@ im_rgb = min(permute(sum(im_rescaled.*color_vector,3),[1,2,4,3]),1);
 
 % Apply rigid transform
 im_display = ap_histology.rigid_transform(im_rgb,curr_im,AP_histology_processing);
+
+% Overlay atlas boundaries (if set)
+if isfield(gui_data,'aligned_ccf')
+    ccf_borders = imdilate(boundarymask(gui_data.aligned_ccf{curr_im}),ones(1));
+    im_display = imoverlay(im_display,ccf_borders,'w');
+end
 
 % Set image
 gui_data.im_h.CData = im_display;
@@ -303,16 +351,13 @@ end
 
 function load_aligned_atlas(currentObject, eventdata, gui_fig)
 
-%%% WORKING HERE
-
-% Load histology processing file
-test_fn = "\\qnap-ap001.dpag.ox.ac.uk\APlab\Data\AM010\histology\raw\AP_histology_processing.mat";
-load(test_fn);
-
-%%%
+disp('Loading alignments...')
 
 % Get guidata
 gui_data = guidata(gui_fig);
+
+% Load histology processing file
+load(gui_data.histology_processing_filename);
 
 % Load atlas
 [av,tv,st] = ap_histology.load_ccf;
@@ -326,8 +371,23 @@ for curr_slice = 1:length(gui_data.data)
         AP_histology_processing.histology_ccf.slice_points(curr_slice,:), 1);
 end
 
+% Apply alignments
+slice_atlas_aligned = cellfun(@(slice,slice_tform,slice_size) ...
+    imwarp(slice,slice_tform,'nearest','OutputView',imref2d(slice_size)), ...
+    {slice_atlas.av}', ...
+    AP_histology_processing.histology_ccf.atlas2histology_tform, ...
+    AP_histology_processing.histology_ccf.atlas2histology_size,'uni',false);
+
+% Set NaN/0 to 1 and package
+gui_data.aligned_ccf = cellfun(@(x) max(x,1),slice_atlas_aligned,'uni',false);
+
 % Update guidata
 guidata(gui_fig, gui_data);
+
+disp('Done');
+
+% Update image
+update_image(currentObject, eventdata, gui_fig);
 
 end
 

@@ -1,21 +1,20 @@
-function align_auto_histology_atlas_v2(~,~,histology_toolbar_gui)
+function align_auto_histology_atlas_v2(~,~,histology_scroll_gui)
 % Part of AP_histology toolbox
 %
 % Auto aligns histology slices and matched CCF slices by outline registration
 
-% Get gui data and histology processing
-histology_toolbar_guidata = guidata(histology_toolbar_gui);
-histology_scroll_data = guidata(histology_toolbar_guidata.histology_scroll);
-load(histology_toolbar_guidata.histology_processing_filename);
+% Get gui data
+histology_scroll_guidata = guidata(histology_scroll_gui);
+load(histology_scroll_guidata.histology_processing_filename);
 
 % Grab slice images from histology scroller
 % (apply rigid transform)
-bw_clim = [min(histology_scroll_data.clim(:,1)), ...
-    max(histology_scroll_data.clim(:,2))];
+bw_clim = [min(histology_scroll_guidata.clim(:,1)), ...
+    max(histology_scroll_guidata.clim(:,2))];
 
-slice_histology = cell(size(histology_scroll_data.data));
-for curr_slice = 1:length(histology_scroll_data.data)
-    curr_slice_chanmax = max(histology_scroll_data.data{curr_slice},[],3);
+slice_histology = cell(size(histology_scroll_guidata.data));
+for curr_slice = 1:length(histology_scroll_guidata.data)
+    curr_slice_chanmax = max(histology_scroll_guidata.data{curr_slice},[],3);
     curr_slice_chanmax_clipped = min(max(curr_slice_chanmax-bw_clim(1),0),diff(bw_clim));
     curr_slice_chanmax_clipped_rigidtform = ...
         ap_histology.rigid_transform(curr_slice_chanmax_clipped,curr_slice,AP_histology_processing);
@@ -27,8 +26,8 @@ end
 [av,tv,st] = ap_histology.load_ccf;
 
 % Get atlas images
-slice_atlas = struct('tv',cell(size(histology_scroll_data.data)), 'av',cell(size(histology_scroll_data.data)));
-for curr_slice = 1:length(histology_scroll_data.data)
+slice_atlas = struct('tv',cell(size(histology_scroll_guidata.data)), 'av',cell(size(histology_scroll_guidata.data)));
+for curr_slice = 1:length(histology_scroll_guidata.data)
     slice_atlas(curr_slice) = ...
         ap_histology.grab_atlas_slice(av,tv, ...
         AP_histology_processing.histology_ccf.slice_vector, ...
@@ -142,7 +141,7 @@ switch user_confirm
         AP_histology_processing.histology_ccf.atlas2histology_size = atlas2histology_size;
         
         % Save
-        save(histology_toolbar_guidata.histology_processing_filename,'AP_histology_processing');
+        save(histology_scroll_guidata.histology_processing_filename,'AP_histology_processing');
         disp('Saved alignments');
 
     case 'No'

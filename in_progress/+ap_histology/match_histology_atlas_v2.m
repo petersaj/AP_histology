@@ -1,4 +1,4 @@
-function match_histology_atlas_v2(~,~,histology_toolbar_gui)
+function match_histology_atlas_v2(~,~,histology_scroll_gui)
 % Part of AP_histology toolbox
 %
 % Choose CCF atlas slices corresponding to histology slices
@@ -8,17 +8,14 @@ gui_data = struct;
 gui_data.curr_histology_slice = 1;
 
 % Get GUI data and store GUI handles
-histology_toolbar_guidata = guidata(histology_toolbar_gui);
-histology_scroll_guidata = guidata(histology_toolbar_guidata.histology_scroll);
-
-gui_data.histology_toolbar_gui = histology_toolbar_gui;
-gui_data.histology_scroll_gui = histology_toolbar_guidata.histology_scroll;
+histology_scroll_guidata = guidata(histology_scroll_gui);
+gui_data.histology_scroll_gui = histology_scroll_gui;
 
 % Load atlas
 [gui_data.av,gui_data.tv,gui_data.st] = ap_histology.load_ccf;
 
 % Create figure, set button functions
-gui_position = histology_toolbar_guidata.histology_scroll.Position;
+gui_position = histology_scroll_gui.Position;
 gui_fig = figure('WindowScrollWheelFcn',@scroll_atlas_slice, ...
     'KeyPressFcn',@keypress,'Toolbar','none','Menubar','none','color','w', ...
     'Units','normalized','Position',gui_position, ...
@@ -43,7 +40,7 @@ gui_data.atlas_title = title(gui_data.atlas_ax,sprintf('Slice %d: NOT SET',1));
 
 % Create CCF colormap
 gui_data.ccf_cmap = cell2mat(cellfun(@(x) ...
-    hex2dec(mat2cell(x,1,[2,2,2]))'./255,st.color_hex_triplet,'uni',false));
+    hex2dec(mat2cell(x,1,[2,2,2]))'./255,gui_data.st.color_hex_triplet,'uni',false));
 
 % Set mode for atlas view (can be either TV, AV, or TV-AV)
 gui_data.atlas_mode = 'TV';
@@ -57,7 +54,7 @@ gui_data.slice_vector = nan(1,3);
 gui_data.slice_points = nan(length(histology_scroll_guidata.data),3);
 
 % Load and set processing
-load(histology_toolbar_guidata.histology_processing_filename);
+load(histology_scroll_guidata.histology_processing_filename);
 % (image order)
 if isfield(AP_histology_processing,'image_order')
     gui_data.image_order = AP_histology_processing.image_order;
@@ -175,7 +172,8 @@ switch eventdata.Key
     case 'return'        
         % Store camera vector and point
         % (Note: only one camera vector used for all slices, overwrites)
-        curr_slice = find(gui_data.image_order == gui_data.curr_histology_slice);
+
+        curr_slice = gui_data.image_order(gui_data.curr_histology_slice);
 
         gui_data.slice_vector = get_camera_vector(gui_data);
         gui_data.slice_points(curr_slice,:) = gui_data.atlas_slice_point;
@@ -200,13 +198,11 @@ switch eventdata.Key
         %%%% WORKS - FINALIZE
         disp('testing interpolation');
 
-        % Interpolate from 1:N slices, put back in image order
         [~,image_order_idx] = ismember((1:size(gui_data.slice_points,1))',gui_data.image_order);
-
         saved_slice_points = ~any(isnan(gui_data.slice_points),2);
 
-        gui_data.slice_points(image_order_idx,:) = ...
-            interp1(gui_data.image_order(saved_slice_points), ...
+        gui_data.slice_points(gui_data.image_order,:) = ...
+            interp1(image_order_idx(saved_slice_points), ...
             gui_data.slice_points(saved_slice_points,:), ...
             1:size(gui_data.slice_points,1),'linear','extrap');
 
@@ -297,7 +293,7 @@ function update_histology_slice(gui_fig)
 gui_data = guidata(gui_fig);
 
 % If there's a saved atlas position, move atlas to there
-curr_slice = find(gui_data.image_order == gui_data.curr_histology_slice);
+curr_slice = gui_data.image_order(gui_data.curr_histology_slice);
 if all(~isnan(gui_data.slice_points(curr_slice,:)))
     gui_data.atlas_slice_point = gui_data.slice_points(curr_slice,:);
 
@@ -408,13 +404,13 @@ user_confirm = questdlg('\fontsize{14} Save?','Confirm exit',opts);
 switch user_confirm
     case 'Yes'     
         % Load processing and save CCF slice data
-        histology_toolbar_guidata = guidata(gui_data.histology_toolbar_gui);
-        load(histology_toolbar_guidata.histology_processing_filename);
+        histology_scroll_guidata = guidata(gui_data.histology_scroll_gui);
+        load(histology_scroll_guidata.histology_processing_filename);
 
         AP_histology_processing.histology_ccf.slice_vector = gui_data.slice_vector;
         AP_histology_processing.histology_ccf.slice_points = gui_data.slice_points;
 
-        save(histology_toolbar_guidata.histology_processing_filename,'AP_histology_processing');
+        save(histology_scroll_guidata.histology_processing_filename,'AP_histology_processing');
 
         delete(gui_fig);
 
@@ -426,9 +422,6 @@ switch user_confirm
         % Do nothing
 
 end 
-
-% Update toolbar GUI
-ap_histology.update_toolbar_gui(gui_data.histology_toolbar_gui);
 
 end
 
