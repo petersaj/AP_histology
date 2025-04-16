@@ -10,15 +10,7 @@ gui_data = struct;
 gui_data.histology_toolbar_gui = histology_toolbar_gui;
 
 % Load atlas
-allen_atlas_path = fileparts(which('template_volume_10um.npy'));
-if isempty(allen_atlas_path)
-    error('No CCF atlas found (add CCF atlas to path)')
-end
-disp('Loading Allen CCF atlas...')
-gui_data.tv = readNPY(fullfile(allen_atlas_path,'template_volume_10um.npy'));
-gui_data.av = readNPY(fullfile(allen_atlas_path,'annotation_volume_10um_by_index.npy'));
-gui_data.st = ap_histology.loadStructureTree(fullfile(allen_atlas_path,'structure_tree_safe_2017.csv'));
-disp('Done.')
+[av,tv,st] = ap_histology.load_ccf;
 
 % Get images (from path in toolbar GUI)
 histology_toolbar_guidata = guidata(histology_toolbar_gui);

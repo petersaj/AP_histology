@@ -62,6 +62,16 @@ uimenu(gui_data.menu.atlas,'Text','Auto-align histology/atlas slices','MenuSelec
 uimenu(gui_data.menu.atlas,'Text','Manual align histology/atlas slices','MenuSelectedFcn', ...
     {@ap_histology.align_manual_histology_atlas,gui_fig});
 
+% Annotation menu
+gui_data.menu.annotation = uimenu(gui_fig,'Text','Annotation');
+uimenu(gui_data.menu.annotation,'Text','Neuropixels probes','MenuSelectedFcn', ...
+    {@ap_histology.annotate_neuropixels_v2,gui_fig});
+
+% View menu
+gui_data.menu.view = uimenu(gui_fig,'Text','View');
+uimenu(gui_data.menu.view,'Text','Aligned atlas','Checked','off', ...
+    'MenuSelectedFcn',{@menu_check,gui_fig},'Enable','off');
+
 %%%%%%%%%% 
 
 % Set up scrollbars
@@ -194,6 +204,12 @@ update_image([], [], gui_fig);
 
 end
 
+function menu_check(currentObject, eventdata, gui_fig)
+% Flip check of whatever was selected
+currentObject.Checked = ~currentObject.Checked;
+% Update image
+update_image([], [], gui_fig);
+end
 
 function update_image(currentObject, eventdata, gui_fig)
 
@@ -228,8 +244,10 @@ im_rgb = min(permute(sum(im_rescaled.*color_vector,3),[1,2,4,3]),1);
 % Apply rigid transform
 im_display = ap_histology.rigid_transform(im_rgb,curr_im,AP_histology_processing);
 
-% Overlay atlas boundaries (if set)
-if isfield(gui_data,'aligned_ccf')
+% Overlay atlas boundaries (if loaded and checked)
+atlas_menu_idx = contains(gui_data.menu.view.Children.Text,'atlas');
+atlas_view = strcmp(gui_data.menu.view.Children(atlas_menu_idx).Checked,'on');
+if atlas_view && isfield(gui_data,'aligned_ccf')
     ccf_borders = imdilate(boundarymask(gui_data.aligned_ccf{curr_im}),ones(1));
     im_display = imoverlay(im_display,ccf_borders,'w');
 end
@@ -351,8 +369,6 @@ end
 
 function load_aligned_atlas(currentObject, eventdata, gui_fig)
 
-disp('Loading alignments...')
-
 % Get guidata
 gui_data = guidata(gui_fig);
 
@@ -384,7 +400,10 @@ gui_data.aligned_ccf = cellfun(@(x) max(x,1),slice_atlas_aligned,'uni',false);
 % Update guidata
 guidata(gui_fig, gui_data);
 
-disp('Done');
+% Enable and check histology view
+atlas_menu_idx = contains(gui_data.menu.view.Children.Text,'atlas');
+gui_data.menu.view.Children(atlas_menu_idx).Enable = 'on';
+gui_data.menu.view.Children(atlas_menu_idx).Checked = 'on';
 
 % Update image
 update_image(currentObject, eventdata, gui_fig);
