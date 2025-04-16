@@ -1,0 +1,82 @@
+function im_rigid_transformed = rigid_transform(im,im_idx,AP_histology_processing)
+% im_rigid_transformed = rigid_transform(im,im_idx,AP_histology_processing)
+%
+% Apply pre-saved rigid transforms (translate, rotate, scale) to histology
+% image. 
+%
+% INPUTS
+% im - raw image
+% im_idx - numbered index for image (e.g. slice 5)
+% AP_histology_processing - processing structure
+
+%%%%%%%%% WORKING HERE
+
+% Initialize transform parameters
+rotation = 0;
+translation = 0;
+reflect_h = 1;
+reflect_v = 1;
+
+% Translation/rotation
+if isfield(AP_histology_processing,'rotation_angle')
+    target_angle = round(nanmean(AP_histology_processing.rotation_angle)/90)*90;
+    target_position = nanmean(AP_histology_processing.translation_center,1);
+
+    rotation = AP_histology_processing.rotation_angle(im_idx) - target_angle;
+    translation = target_position - AP_histology_processing.translation_center(im_idx,:);
+end
+
+% Reflection
+if isfield(AP_histology_processing,'flip')
+    if AP_histology_processing.flip(im_idx,1)
+        reflect_v = -1;
+    end
+    if AP_histology_processing.flip(im_idx,2)
+        reflect_h = -1;
+    end
+end
+
+tform_translation = transltform2d(translation);
+tform_rotation = rigidtform2d(rotation,[0,0]);
+tform_matrix_reflect = diag([reflect_h,reflect_v,1]);
+
+tform = affinetform2d;
+tform.A = tform_translation.A*tform_rotation.A*tform_matrix_reflect;
+Rout = affineOutputView(size(im),tform,'BoundsStyle','CenterOutput');
+
+im_rigid_transformed = imwarp(im,tform,'interp','nearest','OutputView',imref2d(size(im,[1,2])));
+
+im_rigid_transformed = im;
+
+
+%%%%%%%%%%%%%%%%%
+
+% 
+% im_rigid_transformed = im;
+% 
+% % Rotate and center
+% if isfield(AP_histology_processing,'rotation_angle')
+%     target_angle = round(nanmean(AP_histology_processing.rotation_angle)/90)*90;
+%     target_position = nanmean(AP_histology_processing.translation_center,1);
+% 
+%     angle_diff = target_angle - AP_histology_processing.rotation_angle(im_idx);
+%     x_diff = target_position(1) - AP_histology_processing.translation_center(im_idx,1);
+%     y_diff = target_position(2) - AP_histology_processing.translation_center(im_idx,2);
+% 
+%     im_rigid_transformed = imrotate(imtranslate(im_rigid_transformed,[x_diff,y_diff]),angle_diff,'nearest','crop');
+% end
+% 
+% % Flip
+% if isfield(AP_histology_processing,'flip')
+%     if AP_histology_processing.flip(im_idx,1)
+%         im_rigid_transformed = flipud(im_rigid_transformed);
+%     end
+%     if AP_histology_processing.flip(im_idx,2)
+%         im_rigid_transformed = fliplr(im_rigid_transformed);
+%     end
+% end
+
+
+
+
+

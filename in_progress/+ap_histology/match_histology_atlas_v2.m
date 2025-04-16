@@ -15,15 +15,7 @@ gui_data.histology_toolbar_gui = histology_toolbar_gui;
 gui_data.histology_scroll_gui = histology_toolbar_guidata.histology_scroll;
 
 % Load atlas
-allen_atlas_path = fileparts(which('template_volume_10um.npy'));
-if isempty(allen_atlas_path)
-    error('No CCF atlas found (add CCF atlas to path)')
-end
-disp('Loading Allen CCF atlas...')
-gui_data.tv = readNPY(fullfile(allen_atlas_path,'template_volume_10um.npy'));
-gui_data.av = readNPY(fullfile(allen_atlas_path,'annotation_volume_10um_by_index.npy'));
-gui_data.st = ap_histology.loadStructureTree(fullfile(allen_atlas_path,'structure_tree_safe_2017.csv'));
-disp('Done.')
+[gui_data.av,gui_data.tv,gui_data.st] = ap_histology.load_ccf;
 
 % Create figure, set button functions
 gui_position = histology_toolbar_guidata.histology_scroll.Position;
@@ -50,14 +42,8 @@ caxis([0,400]);
 gui_data.atlas_title = title(gui_data.atlas_ax,sprintf('Slice %d: NOT SET',1));
 
 % Create CCF colormap
-% (copied from cortex-lab/allenCCF/setup_utils
-ccf_color_hex = gui_data.st.color_hex_triplet;
-ccf_color_hex(cellfun(@numel,ccf_color_hex)==5) = {'019399'}; % special case where leading zero was evidently dropped
-ccf_cmap_c1 = cellfun(@(x)hex2dec(x(1:2)), ccf_color_hex, 'uni', false);
-ccf_cmap_c2 = cellfun(@(x)hex2dec(x(3:4)), ccf_color_hex, 'uni', false);
-ccf_cmap_c3 = cellfun(@(x)hex2dec(x(5:6)), ccf_color_hex, 'uni', false);
-gui_data.ccf_cmap = ...
-    horzcat(vertcat(ccf_cmap_c1{:}),vertcat(ccf_cmap_c2{:}),vertcat(ccf_cmap_c3{:}))./255;
+gui_data.ccf_cmap = cell2mat(cellfun(@(x) ...
+    hex2dec(mat2cell(x,1,[2,2,2]))'./255,st.color_hex_triplet,'uni',false));
 
 % Set mode for atlas view (can be either TV, AV, or TV-AV)
 gui_data.atlas_mode = 'TV';
