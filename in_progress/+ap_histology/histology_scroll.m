@@ -33,7 +33,7 @@ toolbar_pan_h = findobj(toolbar_h.Children,'Tag','Exploration.Pan');
 delete(setdiff(toolbar_h.Children,[toolbar_zoomin_h,toolbar_zoomout_h,toolbar_pan_h]));
 set(groot,'ShowHiddenHandles','off');
 
-%%%%%%%% Menus WORKING HERE
+%%%% Menus
 
 % Image menu
 gui_data.menu.images = uimenu(gui_fig,'Text','Images');
@@ -71,8 +71,10 @@ uimenu(gui_data.menu.annotation,'Text','Neuropixels probes','MenuSelectedFcn', .
 gui_data.menu.view = uimenu(gui_fig,'Text','View');
 uimenu(gui_data.menu.view,'Text','Aligned atlas','Checked','off', ...
     'MenuSelectedFcn',{@menu_check,gui_fig},'Enable','off');
+uimenu(gui_data.menu.view,'Text','Annotations','Checked','on', ...
+    'MenuSelectedFcn',{@menu_check,gui_fig},'Enable','on');
 
-%%%%%%%%%% 
+%%%% 
 
 % Set up scrollbars
 scrollbar_height = 0.02;
@@ -217,7 +219,8 @@ function update_image(currentObject, eventdata, gui_fig)
 gui_data = guidata(gui_fig);
 
 % Look for histology processing, load if exists
-% (change this later: only load if creation date larger than last loaded?)
+% (change this later: only load given flag reload_processing?)
+% (so small and fast to load, maybe it doesn't matter)
 AP_histology_processing_fn = fullfile(gui_data.image_path,'AP_histology_processing');
 if ~exist(AP_histology_processing_fn,'file')
     load(AP_histology_processing_fn);
@@ -244,13 +247,35 @@ im_rgb = min(permute(sum(im_rescaled.*color_vector,3),[1,2,4,3]),1);
 % Apply rigid transform
 im_display = ap_histology.rigid_transform(im_rgb,curr_im,AP_histology_processing);
 
-% Overlay atlas boundaries (if loaded and checked)
-atlas_menu_idx = contains(gui_data.menu.view.Children.Text,'atlas');
+%%% Add overlays
+
+overlay_dilation = 3;
+
+% Atlas boundaries 
+atlas_menu_idx = contains({gui_data.menu.view.Children.Text},'atlas','IgnoreCase',true);
 atlas_view = strcmp(gui_data.menu.view.Children(atlas_menu_idx).Checked,'on');
 if atlas_view && isfield(gui_data,'aligned_ccf')
-    ccf_borders = imdilate(boundarymask(gui_data.aligned_ccf{curr_im}),ones(1));
+    ccf_borders = imdilate(boundarymask(gui_data.aligned_ccf{curr_im}),ones(overlay_dilation));
     im_display = imoverlay(im_display,ccf_borders,'w');
 end
+
+% Annotations
+annotations_menu_idx = contains({gui_data.menu.view.Children.Text},'annotations','IgnoreCase',true);
+annotations_view = strcmp(gui_data.menu.view.Children(annotations_menu_idx).Checked,'on');
+if annotations_view && isfield(AP_histology_processing,'annotation')
+    for curr_probe = 1:length(AP_histology_processing.annotation.probe)
+        curr_segment = AP_histology_processing.annotation.probe(curr_probe).segments{gui_data.curr_im};
+        if isempty(curr_segment)
+            return
+        end
+        segment_line = images.roi.Line('Position', ...
+            AP_histology_processing.annotation.probe(curr_probe).segments{gui_data.curr_im});
+        segment_mask = imdilate(createMask(segment_line,false(size(im_display))),ones(overlay_dilation));
+        im_display = imoverlay(im_display,segment_mask,'y');
+    end
+end
+
+%%%
 
 % Set image
 gui_data.im_h.CData = im_display;

@@ -41,11 +41,8 @@ function add_probe_segment(currentObject, eventdata, gui_fig)
         gui_data = guidata(gui_fig);
         histology_scroll_guidata = guidata(gui_data.histology_scroll_gui);
 
-        % Draw probe segment line (or if no label, do nothing)
+        % Draw probe segment line
         probe_label = gui_data.probe_label.String;
-        if isempty(probe_label)
-            return
-        end
         probe_line = drawline(histology_scroll_guidata.im_h.Parent,'color','red');
 
         % If the line is just a click, don't include
@@ -70,19 +67,18 @@ function add_probe_segment(currentObject, eventdata, gui_fig)
         if isempty(probe_idx)
             probe_idx = length(AP_histology_processing.annotation.probe)+1;
             AP_histology_processing.annotation.probe(probe_idx).label = probe_label;
-            AP_histology_processing.annotation.probe(probe_idx).segments = ...
-                cell(size(histology_scroll_guidata.data));
         end
 
         AP_histology_processing.annotation.probe(probe_idx).segments{histology_scroll_guidata.curr_im} = ...
-            probe_line.Position;
+            vertcat(AP_histology_processing.annotation.probe(probe_idx).segments{histology_scroll_guidata.curr_im}, ...
+            {probe_line.Position});
 
         % Save processing
-        save(histology_scroll_guidata.histology_processing_filename, 'AP_histology_processing');
+        save(histology_scroll_guidata.histology_processing_filename, AP_histology_processing);
 
         % Delete line object, update histology image
         probe_line.delete;
-        histology_scroll_guidata.update([],[],gui_data.histology_scroll_gui);
+        histology_scroll_guidata.update_scroll([],[],gui_data.histology_scroll_gui);
 
 end
 
