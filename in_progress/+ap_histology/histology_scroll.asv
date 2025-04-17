@@ -64,15 +64,15 @@ uimenu(gui_data.menu.atlas,'Text','Manual align histology/atlas slices','MenuSel
 
 % Annotation menu
 gui_data.menu.annotation = uimenu(gui_fig,'Text','Annotation');
-uimenu(gui_data.menu.annotation,'Text','Neuropixels probes','MenuSelectedFcn', ...
-    {@ap_histology.annotate_neuropixels_v2,gui_fig});
+uimenu(gui_data.menu.annotation,'Text','Probes','MenuSelectedFcn', ...
+    {@ap_histology.annotate_probes,gui_fig});
 
 % View menu
 gui_data.menu.view = uimenu(gui_fig,'Text','View');
 uimenu(gui_data.menu.view,'Text','Aligned atlas','Checked','off', ...
     'MenuSelectedFcn',{@menu_check,gui_fig},'Enable','off');
-uimenu(gui_data.menu.view,'Text','Annotations','Checked','off', ...
-    'MenuSelectedFcn',{@menu_check,gui_fig},'Enable','off');
+uimenu(gui_data.menu.view,'Text','Annotations','Checked','on', ...
+    'MenuSelectedFcn',{@menu_check,gui_fig},'Enable','on');
 
 %%%% 
 
@@ -115,10 +115,17 @@ uicontrol('style','text','units','normalized', ...
     'position',[0,ypos(2),scrollbar_label_width,ypos(4)], ...
     'String','Color min')
 
-% Draw image
+% Draw image, set hover function (for CCF)
 im_ax = axes('Units','normalized','Position',[0,4*scrollbar_height,1,1-4*scrollbar_height]);
 gui_data.im_h = imagesc(im_ax,NaN);
 axis image off;
+gui_fig.WindowButtonMotionFcn = @hover_label;
+
+% Create text object
+gui_data.im_text = text( ...
+    interp1([0,1],gui_data.im_h.Parent.XLim,0.05), ...
+    interp1([0,1],gui_data.im_h.Parent.YLim,0.05), ...
+    '','color','w','BackgroundColor','k','FontSize',14);
 
 % Save update function handle for external calling
 gui_data.update = @update_image;
@@ -153,16 +160,19 @@ image_filenames = cellfun(@(path,name) fullfile(path,name), ...
     {image_dir.folder},{image_dir.name},'uni',false);
 [~,sort_idx] = natsortfiles(image_filenames);
 
-waitbar_h = waitbar(0);
 images = cell(size(image_dir));
 for curr_im = 1:length(sort_idx)
-    waitbar(curr_im/length(sort_idx),waitbar_h, ...
-        sprintf('Loading images (%d/%d)',curr_im,length(sort_idx)));
+    curr_text = sprintf('Loading images (%d/%d)',curr_im,length(sort_idx));
+    set(gui_data.im_text, 'Position', ...
+    [interp1([0,1],gui_data.im_h.Parent.XLim,0.05), ...
+    interp1([0,1],gui_data.im_h.Parent.YLim,0.05),0], ...
+    'String',curr_text); 
+    drawnow;
 
     images{curr_im} = tiffreadVolume( ...
         image_filenames{sort_idx(curr_im)});
 end
-close(waitbar_h);
+gui_data.im_text.String = '';
 
 % Get number of channels, color limits, colors
 n_channels = size(images{1},3);
@@ -261,21 +271,21 @@ end
 
 % Annotations
 annotations_menu_idx = contains({gui_data.menu.view.Children.Text},'annotations','IgnoreCase',true);
-annotations_view = strcmp(gui_data.menu.view.Children(atlas_menu_idx).Checked,'on');
-if annotations_view && isfield(gui_data,'aligned_ccf')
-
+annotations_view = strcmp(gui_data.menu.view.Children(annotations_menu_idx).Checked,'on');
+if annotations_view && isfield(AP_histology_processing,'annotation')
     for curr_probe = 1:length(AP_histology_processing.annotation.probe)
+        curr_segment = AP_histology_processing.annotation.probe(curr_probe).segments{gui_data.curr_im};
+        if isempty(curr_segment)
+            continue
+        end
         segment_line = images.roi.Line('Position', ...
             AP_histology_processing.annotation.probe(curr_probe).segments{gui_data.curr_im});
         segment_mask = imdilate(createMask(segment_line,false(size(im_display))),ones(overlay_dilation));
         im_display = imoverlay(im_display,segment_mask,'y');
     end
-
 end
 
-
 %%%
-
 
 % Set image
 gui_data.im_h.CData = im_display;
@@ -400,6 +410,13 @@ gui_data = guidata(gui_fig);
 % Load histology processing file
 load(gui_data.histology_processing_filename);
 
+% Display status
+set(gui_data.im_text, 'Position', ...
+    [interp1([0,1],gui_data.im_h.Parent.XLim,0.05), ...
+    interp1([0,1],gui_data.im_h.Parent.YLim,0.05),0], ...
+    'String','Loading aligned atlas...');
+drawnow;
+
 % Load atlas
 [av,tv,st] = ap_histology.load_ccf;
 
@@ -426,17 +443,23 @@ gui_data.aligned_ccf = cellfun(@(x) max(x,1),slice_atlas_aligned,'uni',false);
 guidata(gui_fig, gui_data);
 
 % Enable and check histology view
-atlas_menu_idx = contains(gui_data.menu.view.Children.Text,'atlas');
+atlas_menu_idx = contains({gui_data.menu.view.Children.Text},'atlas');
 gui_data.menu.view.Children(atlas_menu_idx).Enable = 'on';
 gui_data.menu.view.Children(atlas_menu_idx).Checked = 'on';
 
 % Update image
+gui_data.im_text.String = '';
 update_image(currentObject, eventdata, gui_fig);
+
+disp('Done.');
 
 end
 
 
+function load_aligned_atlas(currentObject, eventdata, gui_fig)
 
+
+end
 
 
 

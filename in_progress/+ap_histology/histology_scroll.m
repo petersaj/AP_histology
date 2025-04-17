@@ -64,8 +64,8 @@ uimenu(gui_data.menu.atlas,'Text','Manual align histology/atlas slices','MenuSel
 
 % Annotation menu
 gui_data.menu.annotation = uimenu(gui_fig,'Text','Annotation');
-uimenu(gui_data.menu.annotation,'Text','Neuropixels probes','MenuSelectedFcn', ...
-    {@ap_histology.annotate_neuropixels_v2,gui_fig});
+uimenu(gui_data.menu.annotation,'Text','Probes','MenuSelectedFcn', ...
+    {@ap_histology.annotate_probes,gui_fig});
 
 % View menu
 gui_data.menu.view = uimenu(gui_fig,'Text','View');
@@ -115,10 +115,17 @@ uicontrol('style','text','units','normalized', ...
     'position',[0,ypos(2),scrollbar_label_width,ypos(4)], ...
     'String','Color min')
 
-% Draw image
+% Draw image, set hover function (for CCF)
 im_ax = axes('Units','normalized','Position',[0,4*scrollbar_height,1,1-4*scrollbar_height]);
 gui_data.im_h = imagesc(im_ax,NaN);
 axis image off;
+gui_fig.WindowButtonMotionFcn = {@hover_label,gui_fig};
+
+% Create text object
+gui_data.im_text = text( ...
+    interp1([0,1],gui_data.im_h.Parent.XLim,0.05), ...
+    interp1([0,1],gui_data.im_h.Parent.YLim,0.05), ...
+    '','color','w','BackgroundColor','k','FontSize',14);
 
 % Save update function handle for external calling
 gui_data.update = @update_image;
@@ -153,16 +160,19 @@ image_filenames = cellfun(@(path,name) fullfile(path,name), ...
     {image_dir.folder},{image_dir.name},'uni',false);
 [~,sort_idx] = natsortfiles(image_filenames);
 
-waitbar_h = waitbar(0);
 images = cell(size(image_dir));
 for curr_im = 1:length(sort_idx)
-    waitbar(curr_im/length(sort_idx),waitbar_h, ...
-        sprintf('Loading images (%d/%d)',curr_im,length(sort_idx)));
+    curr_text = sprintf('Loading images (%d/%d)',curr_im,length(sort_idx));
+    set(gui_data.im_text, 'Position', ...
+    [interp1([0,1],gui_data.im_h.Parent.XLim,0.05), ...
+    interp1([0,1],gui_data.im_h.Parent.YLim,0.05),0], ...
+    'String',curr_text); 
+    drawnow;
 
     images{curr_im} = tiffreadVolume( ...
         image_filenames{sort_idx(curr_im)});
 end
-close(waitbar_h);
+gui_data.im_text.String = '';
 
 % Get number of channels, color limits, colors
 n_channels = size(images{1},3);
@@ -266,7 +276,7 @@ if annotations_view && isfield(AP_histology_processing,'annotation')
     for curr_probe = 1:length(AP_histology_processing.annotation.probe)
         curr_segment = AP_histology_processing.annotation.probe(curr_probe).segments{gui_data.curr_im};
         if isempty(curr_segment)
-            return
+            continue
         end
         segment_line = images.roi.Line('Position', ...
             AP_histology_processing.annotation.probe(curr_probe).segments{gui_data.curr_im});
@@ -400,8 +410,15 @@ gui_data = guidata(gui_fig);
 % Load histology processing file
 load(gui_data.histology_processing_filename);
 
+% Display status
+set(gui_data.im_text, 'Position', ...
+    [interp1([0,1],gui_data.im_h.Parent.XLim,0.05), ...
+    interp1([0,1],gui_data.im_h.Parent.YLim,0.05),0], ...
+    'String','Loading aligned atlas...');
+drawnow;
+
 % Load atlas
-[av,tv,st] = ap_histology.load_ccf;
+[av,tv,gui_data.st] = ap_histology.load_ccf;
 
 % Grab atlas images
 slice_atlas = struct('tv',cell(size(gui_data.data)), 'av',cell(size(gui_data.data)));
@@ -426,14 +443,73 @@ gui_data.aligned_ccf = cellfun(@(x) max(x,1),slice_atlas_aligned,'uni',false);
 guidata(gui_fig, gui_data);
 
 % Enable and check histology view
-atlas_menu_idx = contains(gui_data.menu.view.Children.Text,'atlas');
+atlas_menu_idx = contains({gui_data.menu.view.Children.Text},'atlas');
 gui_data.menu.view.Children(atlas_menu_idx).Enable = 'on';
 gui_data.menu.view.Children(atlas_menu_idx).Checked = 'on';
 
 % Update image
+gui_data.im_text.String = '';
 update_image(currentObject, eventdata, gui_fig);
 
+disp('Done.');
+
 end
+
+
+function hover_label(currentObject, eventdata, gui_fig)
+
+% Get guidata
+gui_data = guidata(gui_fig);
+
+% If atlas is checked, display CCF label
+atlas_menu_idx = contains({gui_data.menu.view.Children.Text},'atlas','IgnoreCase',true);
+atlas_view = strcmp(gui_data.menu.view.Children(atlas_menu_idx).Checked,'on');
+
+if atlas_view
+
+    % Get mouse position
+    hover_position = get(gui_data.im_h.Parent,'CurrentPoint');
+    hover_x = round(hover_position(1,1));
+    hover_y = round(hover_position(1,2));
+
+    % Don't use if mouse out of bounds
+    if ...
+            hover_x < gui_data.im_h.Parent.XLim(1) || ...
+            hover_x > gui_data.im_h.Parent.XLim(2) || ...
+            hover_y < gui_data.im_h.Parent.YLim(1) || ...
+            hover_y > gui_data.im_h.Parent.YLim(2)
+        gui_data.im_text.String = '';
+        return
+    end
+
+    % Get CCF area at mouse position
+    if exist('AP_histology_processing','var') && ...
+            isfield(AP_histology_processing,'image_order')
+        curr_im = AP_histology_processing.image_order(gui_data.curr_im);
+    else
+        curr_im = gui_data.curr_im;
+    end
+
+    ccf_idx = gui_data.aligned_ccf{curr_im}(hover_x,hover_y);
+    area_name = gui_data.st(ccf_idx,:).name;
+
+    % Display area name
+    set(gui_data.im_text,'Position', ...
+        [interp1([0,1],gui_data.im_h.Parent.XLim,0.05), ...
+        interp1([0,1],gui_data.im_h.Parent.YLim,0.05),0], ...
+        'String',area_name);
+
+end
+
+end
+
+
+
+
+
+
+
+
 
 
 
