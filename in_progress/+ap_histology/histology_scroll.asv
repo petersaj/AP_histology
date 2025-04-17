@@ -119,7 +119,7 @@ uicontrol('style','text','units','normalized', ...
 im_ax = axes('Units','normalized','Position',[0,4*scrollbar_height,1,1-4*scrollbar_height]);
 gui_data.im_h = imagesc(im_ax,NaN);
 axis image off;
-gui_fig.WindowButtonMotionFcn = @hover_label;
+gui_fig.WindowButtonMotionFcn = {@hover_label,gui_fig};
 
 % Create text object
 gui_data.im_text = text( ...
@@ -235,6 +235,7 @@ AP_histology_processing_fn = fullfile(gui_data.image_path,'AP_histology_processi
 if ~exist(AP_histology_processing_fn,'file')
     load(AP_histology_processing_fn);
 end
+gui_data
 
 % Check for processed re-ordering
 if exist('AP_histology_processing','var') && ...
@@ -418,7 +419,7 @@ set(gui_data.im_text, 'Position', ...
 drawnow;
 
 % Load atlas
-[av,tv,st] = ap_histology.load_ccf;
+[av,tv,gui_data.st] = ap_histology.load_ccf;
 
 % Grab atlas images
 slice_atlas = struct('tv',cell(size(gui_data.data)), 'av',cell(size(gui_data.data)));
@@ -456,10 +457,63 @@ disp('Done.');
 end
 
 
-function load_aligned_atlas(currentObject, eventdata, gui_fig)
+function hover_label(currentObject, eventdata, gui_fig)
 
+% Get guidata
+gui_data = guidata(gui_fig);
+
+% If atlas is checked, display CCF label
+atlas_menu_idx = contains({gui_data.menu.view.Children.Text},'atlas','IgnoreCase',true);
+atlas_view = strcmp(gui_data.menu.view.Children(atlas_menu_idx).Checked,'on');
+
+if atlas_view
+
+    % Get mouse position
+    hover_position = get(gui_data.im_h.Parent,'CurrentPoint');
+    hover_x = round(hover_position(1,1));
+    hover_y = round(hover_position(1,2));
+
+    % Don't use if mouse out of bounds
+    if ...
+            hover_x < gui_data.im_h.Parent.XLim(1) || ...
+            hover_x > gui_data.im_h.Parent.XLim(2) || ...
+            hover_y < gui_data.im_h.Parent.YLim(1) || ...
+            hover_y > gui_data.im_h.Parent.YLim(2)
+        gui_data.im_text.String = '';
+        return
+    end
+
+    % Get CCF area at mouse position
+    if exist('AP_histology_processing','var') && ...
+            isfield(AP_histology_processing,'image_order')
+        curr_im = AP_histology_processing.image_order(gui_data.curr_im);
+    else
+        curr_im = gui_data.curr_im;
+    end
+
+    ccf_idx = gui_data.aligned_ccf{curr_im}(hover_y,hover_x);
+    area_name = gui_data.st(ccf_idx,:).name;
+
+    % Display area name
+    set(gui_data.im_text,'Position', ...
+        [interp1([0,1],gui_data.im_h.Parent.XLim,0.05), ...
+        interp1([0,1],gui_data.im_h.Parent.YLim,0.05),0], ...
+        'String',area_name);
 
 end
+
+end
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -44,8 +44,6 @@ uimenu(gui_data.menu.images,'Text','Load aligned atlas','MenuSelectedFcn', ...
 
 % Preprocessing menu
 gui_data.menu.preprocess = uimenu(gui_fig,'Text','Image preprocessing');
-uimenu(gui_data.menu.preprocess,'Text','Create slice images','MenuSelectedFcn', ...
-    {@ap_histology.create_slice_images,gui_fig},'enable','off');
 uimenu(gui_data.menu.preprocess,'Text','Rotate & center slices','MenuSelectedFcn', ...
     {@ap_histology.rotate_center_slices,gui_fig});
 uimenu(gui_data.menu.preprocess,'Text','Flip slices','MenuSelectedFcn', ...
@@ -235,6 +233,8 @@ AP_histology_processing_fn = fullfile(gui_data.image_path,'AP_histology_processi
 if ~exist(AP_histology_processing_fn,'file')
     load(AP_histology_processing_fn);
 end
+gui_data.AP_histology_processing = AP_histology_processing;
+guidata(gui_fig, gui_data);
 
 % Check for processed re-ordering
 if exist('AP_histology_processing','var') && ...
@@ -483,14 +483,14 @@ if atlas_view
     end
 
     % Get CCF area at mouse position
-    if exist('AP_histology_processing','var') && ...
-            isfield(AP_histology_processing,'image_order')
-        curr_im = AP_histology_processing.image_order(gui_data.curr_im);
+    if isfield(gui_data,'AP_histology_processing') && ...
+            isfield(gui_data.AP_histology_processing,'image_order')
+        curr_im = gui_data.AP_histology_processing.image_order(gui_data.curr_im);
     else
         curr_im = gui_data.curr_im;
     end
 
-    ccf_idx = gui_data.aligned_ccf{curr_im}(hover_x,hover_y);
+    ccf_idx = gui_data.aligned_ccf{curr_im}(hover_y,hover_x);
     area_name = gui_data.st(ccf_idx,:).name;
 
     % Display area name
