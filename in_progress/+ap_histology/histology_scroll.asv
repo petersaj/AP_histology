@@ -37,15 +37,13 @@ set(groot,'ShowHiddenHandles','off');
 
 % Image menu
 gui_data.menu.images = uimenu(gui_fig,'Text','Images');
-uimenu(gui_data.menu.images,'Text','Open images','MenuSelectedFcn', ...
+uimenu(gui_data.menu.images,'Text','Load images','MenuSelectedFcn', ...
     {@load_images,gui_fig});
 uimenu(gui_data.menu.images,'Text','Load aligned atlas','MenuSelectedFcn', ...
     {@load_aligned_atlas,gui_fig});
 
 % Preprocessing menu
 gui_data.menu.preprocess = uimenu(gui_fig,'Text','Image preprocessing');
-uimenu(gui_data.menu.preprocess,'Text','Create slice images','MenuSelectedFcn', ...
-    {@ap_histology.create_slice_images,gui_fig},'enable','off');
 uimenu(gui_data.menu.preprocess,'Text','Rotate & center slices','MenuSelectedFcn', ...
     {@ap_histology.rotate_center_slices,gui_fig});
 uimenu(gui_data.menu.preprocess,'Text','Flip slices','MenuSelectedFcn', ...
@@ -130,6 +128,9 @@ gui_data.im_text = text( ...
 % Save update function handle for external calling
 gui_data.update = @update_image;
 
+% Set default gui data for restoring on load
+gui_data.default_gui_data = gui_data;
+
 % Update gui data
 guidata(gui_fig,gui_data);
 
@@ -139,6 +140,10 @@ function load_images(currentObject, eventdata, gui_fig)
 
 % Get guidata
 gui_data = guidata(gui_fig);
+
+% Restore default guidata and turn off all views
+gui_data = gui_data.default_gui_data;
+[gui_data.menu.view.Children.Checked] = deal(false);
 
 % Pick image path
 gui_data.image_path = uigetdir([],'Select path with raw images');
@@ -235,7 +240,8 @@ AP_histology_processing_fn = fullfile(gui_data.image_path,'AP_histology_processi
 if ~exist(AP_histology_processing_fn,'file')
     load(AP_histology_processing_fn);
 end
-gui_data
+gui_data.AP_histology_processing = AP_histology_processing;
+guidata(gui_fig, gui_data);
 
 % Check for processed re-ordering
 if exist('AP_histology_processing','var') && ...
@@ -484,9 +490,9 @@ if atlas_view
     end
 
     % Get CCF area at mouse position
-    if exist('AP_histology_processing','var') && ...
-            isfield(AP_histology_processing,'image_order')
-        curr_im = AP_histology_processing.image_order(gui_data.curr_im);
+    if isfield(gui_data,'AP_histology_processing') && ...
+            isfield(gui_data.AP_histology_processing,'image_order')
+        curr_im = gui_data.AP_histology_processing.image_order(gui_data.curr_im);
     else
         curr_im = gui_data.curr_im;
     end

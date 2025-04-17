@@ -1,4 +1,4 @@
-function gui_fig = histology_scroll(image_path,channel_colors)
+function histology_scroll(image_path,channel_colors)
 % gui_fig = histology_scroll(images,channel_colors)
 %
 %%% CURRENTLY WORKING
@@ -22,8 +22,7 @@ set(gui_fig, 'KeyPressFcn', {@im_keypress, gui_fig});
 
 % Make figure toolbar available 
 % (with only zoom and pan - must be a better way to do this)
-set(gui_fig,'MenuBar','none')
-set(gui_fig,'ToolBar','figure');
+set(gui_fig,'MenuBar','none','ToolBar','figure');
 
 set(groot,'ShowHiddenHandles','on');
 toolbar_h = findobj(gui_fig.Children,'Type','uitoolbar');
@@ -37,7 +36,7 @@ set(groot,'ShowHiddenHandles','off');
 
 % Image menu
 gui_data.menu.images = uimenu(gui_fig,'Text','Images');
-uimenu(gui_data.menu.images,'Text','Open images','MenuSelectedFcn', ...
+uimenu(gui_data.menu.images,'Text','Load images','MenuSelectedFcn', ...
     {@load_images,gui_fig});
 uimenu(gui_data.menu.images,'Text','Load aligned atlas','MenuSelectedFcn', ...
     {@load_aligned_atlas,gui_fig});
@@ -128,6 +127,9 @@ gui_data.im_text = text( ...
 % Save update function handle for external calling
 gui_data.update = @update_image;
 
+% Set default gui data for restoring on load
+gui_data.default_gui_data = gui_data;
+
 % Update gui data
 guidata(gui_fig,gui_data);
 
@@ -137,6 +139,10 @@ function load_images(currentObject, eventdata, gui_fig)
 
 % Get guidata
 gui_data = guidata(gui_fig);
+
+% Restore default guidata and turn off all views
+gui_data = gui_data.default_gui_data;
+[gui_data.menu.view.Children.Checked] = deal(false);
 
 % Pick image path
 gui_data.image_path = uigetdir([],'Select path with raw images');
@@ -221,7 +227,7 @@ currentObject.Checked = ~currentObject.Checked;
 update_image([], [], gui_fig);
 end
 
-function update_image(currentObject, eventdata, gui_fig)
+function update_image(currentObject, eventdata, gui_fig, gui_text)
 
 % Get guidata
 gui_data = guidata(gui_fig);
@@ -289,6 +295,16 @@ end
 
 % Set image
 gui_data.im_h.CData = im_display;
+
+% Update text
+if ~exist('gui_text','var')
+    gui_text = [];
+end
+set(gui_data.im_text, 'Position', ...
+    [interp1([0,1],gui_data.im_h.Parent.XLim,0.05), ...
+    interp1([0,1],gui_data.im_h.Parent.YLim,0.05),0], ...
+    'String',gui_text);
+
 
 % Ensure image scrollbar matches image number (if update called externally)
 gui_data.scrollbar_image.Value = gui_data.curr_im;
