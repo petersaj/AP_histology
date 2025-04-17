@@ -18,7 +18,6 @@ fig_position = [0.025,0.15,0.3,0.7];
 gui_fig = figure('Color',[0.5,0.5,0.5],'Name','Histology scroller', ...
     'Units','normalized','position',fig_position);
 set(gui_fig,'WindowScrollWheelFcn',{@scrollbar_image_MouseWheel, gui_fig});
-set(gui_fig, 'KeyPressFcn', {@im_keypress, gui_fig});
 
 % Make figure toolbar available 
 % (with only zoom and pan - must be a better way to do this)
@@ -38,8 +37,8 @@ set(groot,'ShowHiddenHandles','off');
 gui_data.menu.images = uimenu(gui_fig,'Text','Images');
 uimenu(gui_data.menu.images,'Text','Load images','MenuSelectedFcn', ...
     {@load_images,gui_fig});
-uimenu(gui_data.menu.images,'Text','Load aligned atlas','MenuSelectedFcn', ...
-    {@load_aligned_atlas,gui_fig});
+uimenu(gui_data.menu.images,'Text','Set channel colors','MenuSelectedFcn', ...
+    {@channel_colorpicker,gui_fig});
 
 % Preprocessing menu
 gui_data.menu.preprocess = uimenu(gui_fig,'Text','Image preprocessing');
@@ -51,7 +50,9 @@ uimenu(gui_data.menu.preprocess,'Text','Re-order slices','MenuSelectedFcn', ...
     {@ap_histology.reorder_slices,gui_fig});
 
 % Atlas menu
-gui_data.menu.atlas = uimenu(gui_fig,'Text','Atlas alignment');
+gui_data.menu.atlas = uimenu(gui_fig,'Text','Atlas');
+uimenu(gui_data.menu.atlas,'Text','Load aligned atlas','MenuSelectedFcn', ...
+    {@load_aligned_atlas,gui_fig});
 uimenu(gui_data.menu.atlas,'Text','Choose histology atlas slices','MenuSelectedFcn', ...
     {@ap_histology.match_histology_atlas_v2,gui_fig});
 uimenu(gui_data.menu.atlas,'Text','Auto-align histology/atlas slices','MenuSelectedFcn', ...
@@ -212,10 +213,28 @@ set(gui_data.scrollbar_black, ...
 gui_data.data = images;
 gui_data.curr_im = 1;
 
-% Store guidata
+% Update guidata
 guidata(gui_fig,gui_data);
 
 % Update first image
+update_image([], [], gui_fig);
+
+end
+
+function channel_colorpicker(currentObject, eventdata, gui_fig)
+
+% Get guidata
+gui_data = guidata(gui_fig);
+n_channels = size(gui_data.colors,1);
+
+% Loop through channels, select colors
+for curr_chan = 1:n_channels
+    gui_data.colors(curr_chan,:) = ...
+        uisetcolor(gui_data.colors(curr_chan,:),sprintf('Channel %d',curr_chan));
+end
+
+% Update guidata and image
+guidata(gui_fig,gui_data);
 update_image([], [], gui_fig);
 
 end
@@ -305,9 +324,11 @@ set(gui_data.im_text, 'Position', ...
     interp1([0,1],gui_data.im_h.Parent.YLim,0.05),0], ...
     'String',gui_text);
 
-
 % Ensure image scrollbar matches image number (if update called externally)
 gui_data.scrollbar_image.Value = gui_data.curr_im;
+
+% Prioritze drawing this figure
+drawnow;
 
 end
 
@@ -467,8 +488,6 @@ gui_data.menu.view.Children(atlas_menu_idx).Checked = 'on';
 gui_data.im_text.String = '';
 update_image(currentObject, eventdata, gui_fig);
 
-disp('Done.');
-
 end
 
 
@@ -489,11 +508,8 @@ if atlas_view
     hover_y = round(hover_position(1,2));
 
     % Don't use if mouse out of bounds
-    if ...
-            hover_x < gui_data.im_h.Parent.XLim(1) || ...
-            hover_x > gui_data.im_h.Parent.XLim(2) || ...
-            hover_y < gui_data.im_h.Parent.YLim(1) || ...
-            hover_y > gui_data.im_h.Parent.YLim(2)
+    if ~isbetween(hover_x,gui_data.im_h.Parent.XLim(1),gui_data.im_h.Parent.XLim(2)) || ...
+            ~isbetween(hover_y,gui_data.im_h.Parent.YLim(1),gui_data.im_h.Parent.YLim(2))
         gui_data.im_text.String = '';
         return
     end

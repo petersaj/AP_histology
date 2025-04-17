@@ -1,4 +1,4 @@
-function match_histology_atlas_v2(~,~,histology_scroll_gui)
+function match_histology_atlas_v2(~,~,histology_gui)
 % Part of AP_histology toolbox
 %
 % Choose CCF atlas slices corresponding to histology slices
@@ -8,14 +8,14 @@ gui_data = struct;
 gui_data.curr_histology_slice = 1;
 
 % Get GUI data and store GUI handles
-histology_scroll_guidata = guidata(histology_scroll_gui);
-gui_data.histology_scroll_gui = histology_scroll_gui;
+histology_guidata = guidata(histology_gui);
+gui_data.histology_gui = histology_gui;
 
 % Load atlas
 [gui_data.av,gui_data.tv,gui_data.st] = ap_histology.load_ccf;
 
 % Create figure, set button functions
-gui_position = histology_scroll_gui.Position;
+gui_position = histology_gui.Position;
 gui_fig = figure('WindowScrollWheelFcn',@scroll_atlas_slice, ...
     'KeyPressFcn',@keypress,'Toolbar','none','Menubar','none','color','w', ...
     'Units','normalized','Position',gui_position, ...
@@ -51,15 +51,15 @@ gui_data.atlas_slice_point = camtarget;
 
 % Set up atlas parameters to save for histology
 gui_data.slice_vector = nan(1,3);
-gui_data.slice_points = nan(length(histology_scroll_guidata.data),3);
+gui_data.slice_points = nan(length(histology_guidata.data),3);
 
 % Load and set processing
-load(histology_scroll_guidata.histology_processing_filename);
+load(histology_guidata.histology_processing_filename);
 % (image order)
 if isfield(AP_histology_processing,'image_order')
     gui_data.image_order = AP_histology_processing.image_order;
 else
-    gui_data.image_order = (1:length(histology_scroll_guidata.data))';
+    gui_data.image_order = (1:length(histology_guidata.data))';
 end
 % (previously saved slices)
 if isfield(AP_histology_processing,'histology_ccf')
@@ -76,10 +76,12 @@ end
 guidata(gui_fig,gui_data);
 
 % Set the first slice in both GUIs
-histology_scroll_guidata.curr_im = 1;
-guidata(gui_data.histology_scroll_gui,histology_scroll_guidata);
-histology_scroll_guidata.update([],[],gui_data.histology_scroll_gui);
+histology_guidata.curr_im = 1;
+guidata(gui_data.histology_gui,histology_guidata);
+histology_guidata.update([],[],gui_data.histology_gui);
+
 update_histology_slice(gui_fig);
+update_atlas_slice(gui_fig);
 
 % Print controls
 CreateStruct.Interpreter = 'tex';
@@ -94,9 +96,40 @@ msgbox( ...
     'Enter: set current histology and CCF slice pair'}, ...
     'Controls',CreateStruct);
 
+% Buttons: histology-related
+button_strings = {'Previous histology slice','Next histology slice','Set slice','Interpolate slices','Atlas mode'};
+button_functions = {@previous_slice,@next_slice,@set_slice,@interpolate_slice,@atlas_mode};
+
+button_height = 0.1;
+button_width = 1/length(button_strings);
+button_x = 0:button_width:1-button_width;
+
+for curr_button = 1:length(button_strings)
+    uicontrol(gui_fig,'style','pushbutton','units','normalized', ...
+        'Position',[button_x(curr_button),0,button_width,button_height], ...
+        'String',button_strings{curr_button}, ...
+        'Callback',{button_functions{curr_button},gui_fig});
+end
+
+% Buttons: atlas tilt angle
+button_strings = {'Tilt atlas left','Tilt atlas right','Tilt atlas up','Tilt atlas down'};
+
+button_height = 0.1;
+button_width = 1/length(button_strings);
+button_x = 0:button_width:1-button_width;
+button_y = 1-button_height;
+for curr_button = 1:length(button_strings)
+    gui_data.tilt_button(curr_button) = ...
+        uicontrol(gui_fig,'style','pushbutton','units','normalized', ...
+        'Position',[button_x(curr_button),button_y,button_width,button_height], ...
+        'String',button_strings{curr_button}, ...
+        'Callback',{@tilt_atlas,gui_fig,curr_button});
+end
+
 end 
 
 function keypress(gui_fig,eventdata)
+% (this was all moved to buttons - only keeping test functions)
 
 % Get guidata
 gui_data = guidata(gui_fig);
@@ -104,113 +137,21 @@ gui_data = guidata(gui_fig);
 shift_on = any(strcmp(eventdata.Modifier,'shift'));
 
 switch eventdata.Key
-    
-    % Left/right: cycle through histology slices
-    % (if there's a saved plane point, move atlas to that position)
-    % Shift + arrow keys: rotate atlas slice
-    case 'leftarrow'
-        if ~shift_on
-
-             % Get histology scroll current image, increment 1
-            histology_scroll_guidata = guidata(gui_data.histology_scroll_gui);
-            new_slice = max(histology_scroll_guidata.curr_im - 1,1);
-
-            gui_data.curr_histology_slice = new_slice;            
-            guidata(gui_fig,gui_data);
-
-            histology_scroll_guidata.curr_im = new_slice;
-            guidata(gui_data.histology_scroll_gui,histology_scroll_guidata);
-            histology_scroll_guidata.update([],[],gui_data.histology_scroll_gui);
-
-            update_histology_slice(gui_fig);
-
-        elseif shift_on
-            set(gui_data.atlas_ax,'View',get(gui_data.atlas_ax,'View') + [1,0]);
-            update_atlas_slice(gui_fig)
-        end
-    case 'rightarrow'
-        if ~shift_on
-
-            % Get histology scroll current image, increment 1
-            histology_scroll_guidata = guidata(gui_data.histology_scroll_gui);
-            new_slice = min(histology_scroll_guidata.curr_im + 1, ...
-                length(histology_scroll_guidata.data));
-
-            gui_data.curr_histology_slice = new_slice;            
-            guidata(gui_fig,gui_data);
-
-            histology_scroll_guidata.curr_im = new_slice;
-            guidata(gui_data.histology_scroll_gui,histology_scroll_guidata);
-            histology_scroll_guidata.update([],[],gui_data.histology_scroll_gui);
-
-            update_histology_slice(gui_fig);
-
-        elseif shift_on
-            set(gui_data.atlas_ax,'View',get(gui_data.atlas_ax,'View') + [-1,0]);
-            update_atlas_slice(gui_fig)
-        end
-    case 'uparrow'
-        if shift_on
-            set(gui_data.atlas_ax,'View',get(gui_data.atlas_ax,'View') + [0,-1]);
-            update_atlas_slice(gui_fig)
-        end
-    case 'downarrow'
-        if shift_on
-            set(gui_data.atlas_ax,'View',get(gui_data.atlas_ax,'View') + [0,1]);
-            update_atlas_slice(gui_fig)
-        end
-
-    % M key: switch atlas display mode
-    case 'm'
-        atlas_slice_modes = {'TV','TV-AV','AV'};
-        curr_atlas_mode_idx = strcmp(gui_data.atlas_mode,atlas_slice_modes);
-        gui_data.atlas_mode = atlas_slice_modes{circshift(curr_atlas_mode_idx,[0,1])};
-        guidata(gui_fig,gui_data);
-        update_atlas_slice(gui_fig);
-
-    % Enter: save slice coordinates
-    case 'return'        
-        % Store camera vector and point
-        % (Note: only one camera vector used for all slices, overwrites)
-
-        curr_slice = gui_data.image_order(gui_data.curr_histology_slice);
-
-        gui_data.slice_vector = get_camera_vector(gui_data);
-        gui_data.slice_points(curr_slice,:) = gui_data.atlas_slice_point;
-        guidata(gui_fig,gui_data);
-                
-        update_histology_slice(gui_fig);
-
     case 'c'
-
+        % Clear set
         if shift_on
-            disp('clear all save point');
             gui_data.slice_points(:) = NaN;
+            disp('cleared all save points');
         else
-            disp('clear current save point');
             curr_slice = find(gui_data.image_order == gui_data.curr_histology_slice);
             gui_data.slice_points(curr_slice,:) = NaN;
+            disp('cleared current save point');
         end
-        guidata(gui_fig,gui_data);
-        update_histology_slice(gui_fig);
-
-    case 'i'
-        %%%% WORKS - FINALIZE
-        disp('testing interpolation');
-
-        [~,image_order_idx] = ismember((1:size(gui_data.slice_points,1))',gui_data.image_order);
-        saved_slice_points = ~any(isnan(gui_data.slice_points),2);
-
-        gui_data.slice_points(gui_data.image_order,:) = ...
-            interp1(image_order_idx(saved_slice_points), ...
-            gui_data.slice_points(saved_slice_points,:), ...
-            1:size(gui_data.slice_points,1),'linear','extrap');
-
         guidata(gui_fig,gui_data);
         update_histology_slice(gui_fig);
 
     case 'a'
-        %%%% WORKS - FINALIZE
+        % Do quick alignment to check histology vs atlas
         disp('Quick aligning');
 
         % Set optimizer
@@ -219,8 +160,8 @@ switch eventdata.Key
         optimizer.GrowthFactor = 1+1e-3;
         optimizer.InitialRadius = 1e-3;
 
-        histology_scroll_guidata = guidata(gui_data.histology_scroll_gui);
-        curr_histology_slice = max(histology_scroll_guidata.im_h.CData,[],3);
+        histology_guidata = guidata(gui_data.histology_gui);
+        curr_histology_slice = max(histology_guidata.im_h.CData,[],3);
 
         % Grab AV slice (just switch mode there and back and get CData)
         curr_atlas_mode = gui_data.atlas_mode;
@@ -297,13 +238,13 @@ curr_slice = gui_data.image_order(gui_data.curr_histology_slice);
 if all(~isnan(gui_data.slice_points(curr_slice,:)))
     gui_data.atlas_slice_point = gui_data.slice_points(curr_slice,:);
 
-    gui_data.atlas_title.String = sprintf('Slice %d: Saved',gui_data.curr_histology_slice);
+    gui_data.atlas_title.String = sprintf('Histology slice %d: SET',gui_data.curr_histology_slice);
     gui_data.atlas_title.Color = [0,0.7,0];
 
     guidata(gui_fig,gui_data);
     update_atlas_slice(gui_fig);
 else
-    gui_data.atlas_title.String = sprintf('Slice %d: NOT SAVED',gui_data.curr_histology_slice);
+    gui_data.atlas_title.String = sprintf('Histology slice %d: NOT SET',gui_data.curr_histology_slice);
     gui_data.atlas_title.Color = [0.7,0,0];
 end
 
@@ -400,17 +341,17 @@ end
 
 opts.Default = 'Yes';
 opts.Interpreter = 'tex';
-user_confirm = questdlg('\fontsize{14} Save?','Confirm exit',opts);
+user_confirm = questdlg('\fontsize{14} Save atlas slices?','Confirm exit',opts);
 switch user_confirm
     case 'Yes'     
         % Load processing and save CCF slice data
-        histology_scroll_guidata = guidata(gui_data.histology_scroll_gui);
-        load(histology_scroll_guidata.histology_processing_filename);
+        histology_guidata = guidata(gui_data.histology_gui);
+        load(histology_guidata.histology_processing_filename);
 
         AP_histology_processing.histology_ccf.slice_vector = gui_data.slice_vector;
         AP_histology_processing.histology_ccf.slice_points = gui_data.slice_points;
 
-        save(histology_scroll_guidata.histology_processing_filename,'AP_histology_processing');
+        save(histology_guidata.histology_processing_filename,'AP_histology_processing');
 
         delete(gui_fig);
 
@@ -425,13 +366,123 @@ end
 
 end
 
+function previous_slice(currentObject, eventdata, gui_fig)
 
+% Get guidata
+gui_data = guidata(gui_fig);
 
+% Change slice based on histology
+histology_guidata = guidata(gui_data.histology_gui);
+new_slice = max(histology_guidata.curr_im - 1,1);
 
+gui_data.curr_histology_slice = new_slice;
+guidata(gui_fig,gui_data);
 
+histology_guidata.curr_im = new_slice;
+guidata(gui_data.histology_gui,histology_guidata);
+histology_guidata.update([],[],gui_data.histology_gui);
 
+update_histology_slice(gui_fig);
 
+end
 
+function next_slice(currentObject, eventdata, gui_fig)
 
+% Get guidata
+gui_data = guidata(gui_fig);
+
+% Change slice based on histology
+histology_guidata = guidata(gui_data.histology_gui);
+new_slice = min(histology_guidata.curr_im + 1, ...
+    length(histology_guidata.data));
+
+gui_data.curr_histology_slice = new_slice;
+guidata(gui_fig,gui_data);
+
+histology_guidata.curr_im = new_slice;
+guidata(gui_data.histology_gui,histology_guidata);
+histology_guidata.update([],[],gui_data.histology_gui);
+
+update_histology_slice(gui_fig);
+
+end
+
+function set_slice(currentObject, eventdata, gui_fig)
+
+% Get guidata
+gui_data = guidata(gui_fig);
+
+curr_slice = gui_data.image_order(gui_data.curr_histology_slice);
+
+gui_data.slice_vector = get_camera_vector(gui_data);
+gui_data.slice_points(curr_slice,:) = gui_data.atlas_slice_point;
+guidata(gui_fig,gui_data);
+
+update_histology_slice(gui_fig);
+
+end
+
+function interpolate_slice(currentObject, eventdata, gui_fig)
+
+% Get guidata
+gui_data = guidata(gui_fig);
+
+% Interpolate un-set slices from set slices
+[~,image_order_idx] = ismember((1:size(gui_data.slice_points,1))',gui_data.image_order);
+saved_slice_points = ~any(isnan(gui_data.slice_points),2);
+
+gui_data.slice_points(gui_data.image_order,:) = ...
+    interp1(image_order_idx(saved_slice_points), ...
+    gui_data.slice_points(saved_slice_points,:), ...
+    1:size(gui_data.slice_points,1),'linear','extrap');
+
+guidata(gui_fig,gui_data);
+update_histology_slice(gui_fig);
+
+end
+
+function atlas_mode(currentObject, eventdata, gui_fig)
+
+% Get guidata
+gui_data = guidata(gui_fig);
+
+atlas_slice_modes = {'TV','TV-AV','AV'};
+curr_atlas_mode_idx = strcmp(gui_data.atlas_mode,atlas_slice_modes);
+gui_data.atlas_mode = atlas_slice_modes{circshift(curr_atlas_mode_idx,[0,1])};
+guidata(gui_fig,gui_data);
+update_atlas_slice(gui_fig);
+
+end
+
+function tilt_atlas(currentObject, eventdata, gui_fig, tilt_direction)
+
+% Get guidata
+gui_data = guidata(gui_fig);
+
+% Remove all set slice points if tilt changed (check with user if any set)
+if any(~isnan(gui_data.slice_points),'all')
+    user_confirm = questdlg('Change atlas tilt and clear set slices?','Confirm','Yes','No','No');
+    if strcmpi(user_confirm,'no')
+        return
+    end
+    gui_data.slice_points(:) = NaN;
+    guidata(gui_fig,gui_data);
+end
+
+switch tilt_direction
+    case 1
+        tilt_change = [-1,0];
+    case 2
+        tilt_change = [1,0];
+    case 3
+        tilt_change = [0,1];
+    case 4
+        tilt_change = [0,-1];
+end
+
+set(gui_data.atlas_ax,'View',get(gui_data.atlas_ax,'View') + tilt_change);
+update_atlas_slice(gui_fig)
+
+end
 
 

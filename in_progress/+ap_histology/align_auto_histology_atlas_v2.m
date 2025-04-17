@@ -1,20 +1,20 @@
-function align_auto_histology_atlas_v2(~,~,histology_scroll_gui)
+function align_auto_histology_atlas_v2(~,~,histology_gui)
 % Part of AP_histology toolbox
 %
 % Auto aligns histology slices and matched CCF slices by outline registration
 
 % Get gui data
-histology_scroll_guidata = guidata(histology_scroll_gui);
-load(histology_scroll_guidata.histology_processing_filename);
+histology_guidata = guidata(histology_gui);
+load(histology_guidata.histology_processing_filename);
 
 % Grab slice images from histology scroller
 % (apply rigid transform)
-bw_clim = [min(histology_scroll_guidata.clim(:,1)), ...
-    max(histology_scroll_guidata.clim(:,2))];
+bw_clim = [min(histology_guidata.clim(:,1)), ...
+    max(histology_guidata.clim(:,2))];
 
-slice_histology = cell(size(histology_scroll_guidata.data));
-for curr_slice = 1:length(histology_scroll_guidata.data)
-    curr_slice_chanmax = max(histology_scroll_guidata.data{curr_slice},[],3);
+slice_histology = cell(size(histology_guidata.data));
+for curr_slice = 1:length(histology_guidata.data)
+    curr_slice_chanmax = max(histology_guidata.data{curr_slice},[],3);
     curr_slice_chanmax_clipped = min(max(curr_slice_chanmax-bw_clim(1),0),diff(bw_clim));
     curr_slice_chanmax_clipped_rigidtform = ...
         ap_histology.rigid_transform(curr_slice_chanmax_clipped,curr_slice,AP_histology_processing);
@@ -26,8 +26,8 @@ end
 [av,tv,st] = ap_histology.load_ccf;
 
 % Get atlas images
-slice_atlas = struct('tv',cell(size(histology_scroll_guidata.data)), 'av',cell(size(histology_scroll_guidata.data)));
-for curr_slice = 1:length(histology_scroll_guidata.data)
+slice_atlas = struct('tv',cell(size(histology_guidata.data)), 'av',cell(size(histology_guidata.data)));
+for curr_slice = 1:length(histology_guidata.data)
     slice_atlas(curr_slice) = ...
         ap_histology.grab_atlas_slice(av,tv, ...
         AP_histology_processing.histology_ccf.slice_vector, ...
@@ -43,8 +43,11 @@ atlas2histology_tform = cell(size(slice_histology));
 atlas2histology_size = cell(size(slice_histology));
 av_aligned = cell(size(slice_histology));
 
-waitbar_h = waitbar(0,'Aligning atlas/histology slices...');
 for curr_slice = 1:length(slice_histology)
+
+    % Update status text
+    slice_status = sprintf('Auto-aligning atlas/histology slices: %d/%d',curr_slice,length(slice_histology));
+    histology_guidata.update([],[],histology_gui,slice_status)
 
     % To align anatomy:
     curr_histology_slice = slice_histology{curr_slice};
@@ -94,25 +97,13 @@ for curr_slice = 1:length(slice_histology)
     av_aligned{curr_slice} = ...
         imwarp(slice_atlas(curr_slice).av,tformEstimate_affine,'nearest', ...
         'Outputview',imref2d(size(curr_histology_slice)));
-
-    waitbar(curr_slice/length(slice_histology),waitbar_h, ...
-        sprintf('Aligning atlas/histology slices: %d/%d', ...
-        curr_slice,length(slice_histology)));
-
 end
 
-close(waitbar_h);
+% Clear status text
+histology_guidata.update([],[],histology_gui,'')
 
 % Montage overlay
-screen_size_px = get(0,'screensize');
-gui_aspect_ratio = 1.7; % width/length
-gui_width_fraction = 0.6; % fraction of screen width to occupy
-gui_width_px = screen_size_px(3).*gui_width_fraction;
-gui_position = [...
-    (screen_size_px(3)-gui_width_px)/2, ... % left x
-    (screen_size_px(4)-gui_width_px/gui_aspect_ratio)/2, ... % bottom y
-    gui_width_px,gui_width_px/gui_aspect_ratio]; % width, height
-align_fig = figure('color','w','Position',gui_position);
+align_fig = figure('color','w','units','normalized','Position',histology_gui.Position);
 
 im_ax = axes(align_fig,'units','normalized','position',[0,0,1,1]);
 im_montage = montage(slice_histology);
@@ -129,11 +120,12 @@ clim(atlas_ax,[1,size(ccf_cmap,1)]);
 atlas_montage.AlphaData = 0.2;
 
 linkaxes([im_ax,atlas_ax]);
+title(atlas_ax,'Histology/atlas alignment overlay');
 
 % Prompt for save
 opts.Default = 'Yes';
 opts.Interpreter = 'tex';
-user_confirm = questdlg('\fontsize{14} Save?','Confirm exit','Yes','No',opts);
+user_confirm = questdlg('\fontsize{14} Save alignments?','Confirm exit','Yes','No',opts);
 switch user_confirm
     case 'Yes'
         % Package
@@ -141,7 +133,7 @@ switch user_confirm
         AP_histology_processing.histology_ccf.atlas2histology_size = atlas2histology_size;
         
         % Save
-        save(histology_scroll_guidata.histology_processing_filename,'AP_histology_processing');
+        save(histology_guidata.histology_processing_filename,'AP_histology_processing');
         disp('Saved alignments');
 
     case 'No'

@@ -1,8 +1,13 @@
-function reorder_slices(~,~,histology_toolbar_gui)
+function reorder_slices(~,~,histology_gui)
+
+% User confirm
+user_confirm = questdlg('Set new slice order?','Confirm','Yes','No','No');
+if strcmpi(user_confirm,'no')
+    return
+end
 
 % Get gui data
-histology_toolbar_guidata = guidata(histology_toolbar_gui);
-histology_scroll_data = guidata(histology_toolbar_guidata.histology_scroll);
+histology_guidata = guidata(histology_gui);
 
 % Plot all images (downsampled)
 screen_size_px = get(0,'screensize');
@@ -19,15 +24,15 @@ gui_fig = figure('Toolbar','none','Menubar','none','color','w', ...
 
 % Plot images (grab BW from histology scroller)
 tile_h = tiledlayout('flow','TileSpacing','none');
-image_h = gobjects(length(histology_scroll_data.data),1);
+image_h = gobjects(length(histology_guidata.data),1);
 
-bw_clim = [min(histology_scroll_data.clim(:,1)), ...
-    max(histology_scroll_data.clim(:,2))];
+bw_clim = [min(histology_guidata.clim(:,1)), ...
+    max(histology_guidata.clim(:,2))];
 
 downsample_factor = 1/10;
-for curr_slice = 1:length(histology_scroll_data.data)
+for curr_slice = 1:length(histology_guidata.data)
     nexttile; 
-    image_h(curr_slice) = imagesc(max(imresize(histology_scroll_data.data{curr_slice},downsample_factor),[],3));
+    image_h(curr_slice) = imagesc(max(imresize(histology_guidata.data{curr_slice},downsample_factor),[],3));
     axis image off;
     clim(bw_clim);
     colormap(gray);
@@ -43,9 +48,9 @@ title(tile_h,'Click to assign/un-assign slice order','FontSize',12);
 % Package image handles and slice number index in figure
 gui_data = struct;
 
-gui_data.histology_toolbar_gui = histology_toolbar_gui;
+gui_data.histology_gui = histology_gui;
 gui_data.image_h = image_h;
-gui_data.slice_idx = nan(length(histology_scroll_data.data),1);
+gui_data.slice_idx = nan(length(histology_guidata.data),1);
 guidata(gui_fig,gui_data)
 
 end
@@ -92,14 +97,14 @@ end
 function save_reordered_slices(gui_data)
 
 % Get histology toolbar data
-histology_toolbar_guidata = guidata(gui_data.histology_toolbar_gui);
+histology_guidata = guidata(gui_data.histology_gui);
 
 % Load processing and save re-ordering
-load(histology_toolbar_guidata.histology_processing_filename);
+load(histology_guidata.histology_processing_filename);
 
 AP_histology_processing.image_order = gui_data.slice_idx;
 
-save(histology_toolbar_guidata.histology_processing_filename,'AP_histology_processing');
+save(histology_guidata.histology_processing_filename,'AP_histology_processing');
 
 end
 
