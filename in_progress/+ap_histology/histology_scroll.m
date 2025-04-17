@@ -186,8 +186,13 @@ clim_max = squeeze(max(cell2mat(cellfun(@(x) max(x,[],[1,2]),images,'uni',false)
 gui_data.clim = [clim_min,clim_max];
 
 if ~exist('channel_colors','var') || isempty(channel_colors)
-    % Default channel colors to RGB
-    channel_colors = [1,0,0;0,1,0;0,0,1];
+    % Default channel colors
+    channel_colors = ...
+        [1,0,0;0,1,0;0,0,1; ... % RGB
+        0,1,1;1,0,1;1,1,0];     % CYM
+    if n_channels > 6
+        channel_colors = hsv(n_channels);
+    end
 end
 gui_data.colors = channel_colors(1:n_channels,:);
 
@@ -508,8 +513,11 @@ if atlas_view
     hover_y = round(hover_position(1,2));
 
     % Don't use if mouse out of bounds
-    if ~isbetween(hover_x,gui_data.im_h.Parent.XLim(1),gui_data.im_h.Parent.XLim(2)) || ...
-            ~isbetween(hover_y,gui_data.im_h.Parent.YLim(1),gui_data.im_h.Parent.YLim(2))
+    if ...
+            hover_x < gui_data.im_h.Parent.XLim(1) || ...
+            hover_x > gui_data.im_h.Parent.XLim(2) || ...
+            hover_y < gui_data.im_h.Parent.YLim(1) || ...
+            hover_y > gui_data.im_h.Parent.YLim(2)
         gui_data.im_text.String = '';
         return
     end

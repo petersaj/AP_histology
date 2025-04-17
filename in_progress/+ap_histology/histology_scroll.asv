@@ -213,7 +213,7 @@ set(gui_data.scrollbar_black, ...
 gui_data.data = images;
 gui_data.curr_im = 1;
 
-% Store guidata
+% Update guidata
 guidata(gui_fig,gui_data);
 
 % Update first image
@@ -227,22 +227,15 @@ function channel_colorpicker(currentObject, eventdata, gui_fig)
 gui_data = guidata(gui_fig);
 n_channels = size(gui_data.colors,1);
 
-keyboard
-
-fig_width =  gui_fig.Position(3)/3;
-fig_height = gui_fig.Position(4)/3;
-fig_x = gui_fig.Position(1);
-fig_y = sum(gui_fig.Position([2,4])) - fig_height;
-fig_position = [fig_x,fig_y,fig_width,fig_height];
-
-colorpicker_fig = uifigure('units','normalized','position',fig_position);
-gui_grid = uigridlayout(colorpicker_fig,[n_channels,2]);
-
+% Loop through channels, select colors
 for curr_chan = 1:n_channels
-    uilabel(gui_grid,'HorizontalAlignment','center','FontSize',14, ...
-        'Text',sprintf('Channel %d',curr_chan));
-    uicolorpicker(gui_grid,'value',gui_data.colors(curr_chan,:));
+    gui_data.colors(curr_chan,:) = ...
+        uisetcolor(gui_data.colors(curr_chan,:),sprintf('Channel %d',curr_chan));
 end
+
+% Update guidata and image
+guidata(gui_fig,gui_data);
+update_image([], [], gui_fig);
 
 end
 
