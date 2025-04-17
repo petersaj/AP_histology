@@ -12,27 +12,27 @@ function [X,ndx,dbg] = natsortfiles(X,varargin)
 %%% Example:
 % D = 'C:\Test';
 % S = dir(fullfile(D,'*.txt'));
-% N = natsortfiles({S.name});
+% N = ap_histology.natsortfiles({S.name});
 % for k = 1:numel(N)
 %     fullfile(D,N{k})
 % end
 %
 %%% Syntax:
-%  Y = natsortfiles(X)
-%  Y = natsortfiles(X,xpr)
-%  Y = natsortfiles(X,xpr,<options>)
-% [Y,ndx] = natsortfiles(X,...)
-% [Y,ndx,dbg] = natsortfiles(X,...)
+%  Y = ap_histology.natsortfiles(X)
+%  Y = ap_histology.natsortfiles(X,xpr)
+%  Y = ap_histology.natsortfiles(X,xpr,<options>)
+% [Y,ndx] = ap_histology.natsortfiles(X,...)
+% [Y,ndx,dbg] = ap_histology.natsortfiles(X,...)
 %
-% To sort all of the strings in a cell array use NATSORT (File Exchange 34464).
-% To sort the rows of a cell array of strings use NATSORTROWS (File Exchange 47433).
+% To sort all of the strings in a cell array use ap_histology.natsort (File Exchange 34464).
+% To sort the rows of a cell array of strings use ap_histology.natsortROWS (File Exchange 47433).
 %
-% See also NATSORT NATSORTROWS SORT CELLSTR IREGEXP REGEXP SSCANF DIR FILEPARTS FULLFILE
+% See also ap_histology.natsort ap_histology.natsortROWS SORT CELLSTR IREGEXP REGEXP SSCANF DIR FILEPARTS FULLFILE
 %
 %% File Dependency %%
 %
-% NATSORTFILES requires the function NATSORT (File Exchange 34464). The inputs
-% <xpr> and <options> are passed directly to NATSORT: see NATSORT for case
+% ap_histology.natsortFILES requires the function ap_histology.natsort (File Exchange 34464). The inputs
+% <xpr> and <options> are passed directly to ap_histology.natsort: see ap_histology.natsort for case
 % sensitivity, sort direction, numeric substring matching, and other options.
 %
 %% Explanation %%
@@ -43,7 +43,7 @@ function [X,ndx,dbg] = natsortfiles(X,varargin)
 %
 % Similarly the file separator character within filepaths can cause longer
 % directory names to sort before shorter ones, as char(0:46)<'/' and char(0:91)<'\'.
-% NATSORTFILES splits filepaths at each file separator character and sorts
+% ap_histology.natsortFILES splits filepaths at each file separator character and sorts
 % every level of the directory hierarchy separately, ensuring that shorter
 % directory names sort before longer, regardless of the characters in the names.
 %
@@ -52,7 +52,7 @@ function [X,ndx,dbg] = natsortfiles(X,varargin)
 % A = {'a2.txt', 'a10.txt', 'a1.txt'};
 % sort(A)
 %  ans = 'a1.txt'  'a10.txt'  'a2.txt'
-% natsortfiles(A)
+% ap_histology.natsortfiles(A)
 %  ans = 'a1.txt'  'a2.txt'  'a10.txt'
 %
 % B = {'test_new.m'; 'test-old.m'; 'test.m'};
@@ -61,7 +61,7 @@ function [X,ndx,dbg] = natsortfiles(X,varargin)
 %    'test-old.m'
 %    'test.m'
 %    'test_new.m'
-% natsortfiles(B) % Shorter names before longer (dictionary sort):
+% ap_histology.natsortfiles(B) % Shorter names before longer (dictionary sort):
 %  ans =
 %    'test.m'
 %    'test-old.m'
@@ -75,7 +75,7 @@ function [X,ndx,dbg] = natsortfiles(X,varargin)
 %    'test10-old.m'
 %    'test10.m'
 %    'test2.m'
-% natsortfiles(C) % Correct numeric order, shorter names before longer:
+% ap_histology.natsortfiles(C) % Correct numeric order, shorter names before longer:
 %  ans =
 %    'test.m'
 %    'test1.m'
@@ -92,7 +92,7 @@ function [X,ndx,dbg] = natsortfiles(X,varargin)
 %    'A1archive.zip'
 %    'A2-old\test.m'
 %    'A2\test.m'
-% natsortfiles(D) % Shorter names before longer (dictionary sort):
+% ap_histology.natsortfiles(D) % Shorter names before longer (dictionary sort):
 %  ans =
 %    'A1archive.zip'
 %    'A1\test.m'
@@ -102,21 +102,21 @@ function [X,ndx,dbg] = natsortfiles(X,varargin)
 %
 %% Input and Output Arguments %%
 %
-% See NATSORT for a full description of <xpr> and the <options>.
+% See ap_histology.natsort for a full description of <xpr> and the <options>.
 %
 %%% Inputs (*=default):
 %  X   = CellArrayOfCharRowVectors, with filenames or filepaths to be sorted.
 %  xpr = CharRowVector, regular expression to detect numeric substrings, '\d+'*.
-%  <options> can be supplied in any order and are passed directly to NATSORT.
+%  <options> can be supplied in any order and are passed directly to ap_histology.natsort.
 %
 %%% Outputs:
 %  Y   = CellArrayOfCharRowVectors, filenames of <X> sorted into natural-order.
 %  ndx = NumericMatrix, same size as <X>. Indices such that Y = X(ndx).
 %  dbg = CellVectorOfCellArrays, size 1xMAX(2+NumberOfDirectoryLevels).
 %        Each cell contains the debug cell array for directory names,
-%        filenames, or file extensions. To help debug <xpr>. See NATSORT.
+%        filenames, or file extensions. To help debug <xpr>. See ap_histology.natsort.
 %
-% [Y,ndx,dbg] = natsortfiles(X,*xpr,<options>)
+% [Y,ndx,dbg] = ap_histology.natsortfiles(X,*xpr,<options>)
 
 %% Input Wrangling %%
 %
@@ -136,11 +136,11 @@ vec{numel(len)} = [];
 %
 % Natural-order sort of the file extensions and filenames:
 if nargout<3 % faster:
-	[~,ndx] = natsort(ext,varargin{:});
-	[~,ids] = natsort(fnm(ndx),varargin{:});
+	[~,ndx] = ap_histology.natsort(ext,varargin{:});
+	[~,ids] = ap_histology.natsort(fnm(ndx),varargin{:});
 else % for debugging:
-	[~,ndx,dbg{num+2}] = natsort(ext,varargin{:});
-	[~,ids,tmp] = natsort(fnm(ndx),varargin{:});
+	[~,ndx,dbg{num+2}] = ap_histology.natsort(ext,varargin{:});
+	[~,ids,tmp] = ap_histology.natsort(fnm(ndx),varargin{:});
 	[~,idd] = sort(ndx);
 	dbg{num+1} = tmp(idd,:);
 end
@@ -152,9 +152,9 @@ for k = num:-1:1
 	vec(:) = {''};
 	vec(idx) = cellfun(@(c)c(k),pth(idx));
 	if nargout<3 % faster:
-		[~,ids] = natsort(vec(ndx),varargin{:});
+		[~,ids] = ap_histology.natsort(vec(ndx),varargin{:});
 	else % for debugging:
-		[~,ids,tmp] = natsort(vec(ndx),varargin{:});
+		[~,ids,tmp] = ap_histology.natsort(vec(ndx),varargin{:});
 		[~,idd] = sort(ndx);
 		dbg{k} = tmp(idd,:);
 	end
@@ -166,4 +166,4 @@ ndx = reshape(ndx,size(X));
 X = X(ndx);
 %
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%natsortfiles
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%ap_histology.natsortfiles
