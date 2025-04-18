@@ -26,15 +26,14 @@ gui_fig = figure('Toolbar','none','Menubar','none','color','w', ...
 tile_h = tiledlayout('flow','TileSpacing','none');
 image_h = gobjects(length(histology_guidata.data),1);
 
-bw_clim = [min(histology_guidata.clim(:,1)), ...
-    max(histology_guidata.clim(:,2))];
-
 downsample_factor = 1/10;
 for curr_slice = 1:length(histology_guidata.data)
     nexttile; 
-    image_h(curr_slice) = imagesc(max(imresize(histology_guidata.data{curr_slice},downsample_factor),[],3));
+    curr_slice_bw = ...
+        max(min(histology_guidata.data{curr_slice} - permute(histology_guidata.clim(:,1),[2,3,1]), ...
+        permute(diff(histology_guidata.clim,[],2),[2,3,1])),[],3);
+    image_h(curr_slice) = imagesc(imresize(curr_slice_bw,downsample_factor));
     axis image off;
-    clim(bw_clim);
     colormap(gray);
     drawnow;
 end

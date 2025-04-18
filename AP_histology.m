@@ -26,6 +26,7 @@ set(gui_fig,'WindowScrollWheelFcn',{@scrollbar_image_MouseWheel, gui_fig});
 set(gui_fig,'MenuBar','none','ToolBar','figure');
 
 set(groot,'ShowHiddenHandles','on');
+addToolbarExplorationButtons(gui_fig)
 toolbar_h = findobj(gui_fig.Children,'Type','uitoolbar');
 toolbar_zoomin_h = findobj(toolbar_h.Children,'Tag','Exploration.ZoomIn');
 toolbar_zoomout_h = findobj(toolbar_h.Children,'Tag','Exploration.ZoomOut');
@@ -60,7 +61,7 @@ uimenu(gui_data.menu.atlas,'Text','Choose histology atlas slices','MenuSelectedF
 uimenu(gui_data.menu.atlas,'Text','Auto-align histology/atlas slices','MenuSelectedFcn', ...
     {@ap_histology.align_auto_histology_atlas,gui_fig});
 uimenu(gui_data.menu.atlas,'Text','Manual align histology/atlas slices','MenuSelectedFcn', ...
-    {@ap_histology.align_manual_histology_atlas,gui_fig});
+    {@ap_histology.align_manual_histology_atlas_v2,gui_fig});
 
 % Annotation menu
 gui_data.menu.annotation = uimenu(gui_fig,'Text','Annotation');

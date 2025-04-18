@@ -1,25 +1,30 @@
-function align_auto_histology_atlas_v2(~,~,histology_gui)
+function align_auto_histology_atlas(~,~,histology_gui)
 % Part of AP_histology toolbox
 %
 % Auto aligns histology slices and matched CCF slices by outline registration
+
+% User confirm
+user_confirm = questdlg('Auto-align histology/atlas slices?','Confirm','Yes','No','No');
+if strcmpi(user_confirm,'no')
+    return
+end
 
 % Get gui data
 histology_guidata = guidata(histology_gui);
 load(histology_guidata.histology_processing_filename);
 
-% Grab slice images from histology scroller
+% Grab slice images from histology scroller and grayscale 
 % (apply rigid transform)
-bw_clim = [min(histology_guidata.clim(:,1)), ...
-    max(histology_guidata.clim(:,2))];
-
 slice_histology = cell(size(histology_guidata.data));
 for curr_slice = 1:length(histology_guidata.data)
-    curr_slice_chanmax = max(histology_guidata.data{curr_slice},[],3);
-    curr_slice_chanmax_clipped = min(max(curr_slice_chanmax-bw_clim(1),0),diff(bw_clim));
-    curr_slice_chanmax_clipped_rigidtform = ...
-        ap_histology.rigid_transform(curr_slice_chanmax_clipped,curr_slice,AP_histology_processing);
+    curr_slice_bw = ...
+        max(min(histology_guidata.data{curr_slice} - permute(histology_guidata.clim(:,1),[2,3,1]), ...
+        permute(diff(histology_guidata.clim,[],2),[2,3,1])),[],3);
 
-    slice_histology{curr_slice} = curr_slice_chanmax_clipped_rigidtform;
+    curr_slice_bw_rigidtform = ...
+        ap_histology.rigid_transform(curr_slice_bw,curr_slice,AP_histology_processing);
+
+    slice_histology{curr_slice} = curr_slice_bw_rigidtform;
 end
 
 % Load atlas

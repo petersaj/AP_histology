@@ -1,38 +1,52 @@
-function align_manual_histology_atlas(~,~,histology_toolbar_gui)
+function align_manual_histology_atlas(~,~,histology_gui)
 % Part of AP_histology toolbox
 %
 % Manually align histology slices and matched CCF slices
 
-% Initialize guidata
+%%%%%%%%% WORKING
+
+% Get gui data
+histology_guidata = guidata(histology_gui);
+load(histology_guidata.histology_processing_filename);
+
+% Grab slice images from histology scroller and grayscale 
+% (apply rigid transform)
+slice_histology = cell(size(histology_guidata.data));
+for curr_slice = 1:length(histology_guidata.data)
+    curr_slice_bw = ...
+        max(min(histology_guidata.data{curr_slice} - permute(histology_guidata.clim(:,1),[2,3,1]), ...
+        permute(diff(histology_guidata.clim,[],2),[2,3,1])),[],3);
+
+    curr_slice_bw_rigidtform = ...
+        ap_histology.rigid_transform(curr_slice_bw,curr_slice,AP_histology_processing);
+
+    slice_histology{curr_slice} = curr_slice_bw_rigidtform;
+end
+
+% Load atlas
+[av,tv,st] = ap_histology.load_ccf;
+
+% Get atlas images
+slice_atlas = struct('tv',cell(size(histology_guidata.data)), 'av',cell(size(histology_guidata.data)));
+for curr_slice = 1:length(histology_guidata.data)
+    slice_atlas(curr_slice) = ...
+        ap_histology.grab_atlas_slice(av,tv, ...
+        AP_histology_processing.histology_ccf.slice_vector, ...
+        AP_histology_processing.histology_ccf.slice_points(curr_slice,:), 1);
+end
+
+% Load processing
+load(histology_guidata.histology_processing_filename);
+
+
+%%%%%%%%% temp? Store images in gui
 gui_data = struct;
+gui_data.slice_im = slice_histology;
+[gui_data.histology_ccf(1:length(slice_atlas)).tv_slices] = slice_atlas.tv;
+[gui_data.histology_ccf(1:length(slice_atlas)).av_slices] = slice_atlas.av;
+gui_data.histology_processing_filename = histology_guidata.histology_processing_filename;
+gui_data.histology_ccf_auto_alignment = AP_histology_processing.histology_ccf.atlas2histology_tform;
 
-% Store toolbar handle
-gui_data.histology_toolbar_gui = histology_toolbar_gui;
-
-% Get images (from path in toolbar GUI)
-histology_toolbar_guidata = guidata(histology_toolbar_gui);
-gui_data.save_path = histology_toolbar_guidata.save_path;
-
-slice_dir = dir(fullfile(gui_data.save_path,'*.tif'));
-slice_fn = natsortfiles(cellfun(@(path,fn) fullfile(path,fn), ...
-    {slice_dir.folder},{slice_dir.name},'uni',false));
-
-gui_data.slice_im = cell(length(slice_fn),1);
-for curr_slice = 1:length(slice_fn)
-   gui_data.slice_im{curr_slice} = imread(slice_fn{curr_slice});  
-end
-
-% Load corresponding CCF slices
-ccf_slice_fn = fullfile(gui_data.save_path,'histology_ccf.mat');
-load(ccf_slice_fn);
-gui_data.histology_ccf = histology_ccf;
-
-% Load automated alignment
-auto_ccf_alignment_fn = fullfile(gui_data.save_path,'atlas2histology_tform.mat');
-if exist(auto_ccf_alignment_fn,'file')
-    load(auto_ccf_alignment_fn);
-    gui_data.histology_ccf_auto_alignment = atlas2histology_tform;
-end
 
 % Create figure, set button functions
 screen_size_px = get(0,'screensize');
@@ -55,7 +69,7 @@ gui_data.curr_slice = 1;
 gui_data.histology_ax = subplot(1,2,1,'YDir','reverse'); 
 set(gui_data.histology_ax,'Position',[0,0,0.5,0.9]);
 hold on; colormap(gray); axis image off;
-gui_data.histology_im_h = image(gui_data.slice_im{1}, ...
+gui_data.histology_im_h = imagesc(gui_data.slice_im{1}, ...
     'Parent',gui_data.histology_ax,'ButtonDownFcn',@mouseclick_histology);
 
 % Set up histology-aligned atlas overlay
@@ -69,7 +83,7 @@ gui_data.histology_aligned_atlas_boundaries = ...
 % Set up axis for atlas slice
 gui_data.atlas_ax = subplot(1,2,2,'YDir','reverse'); 
 set(gui_data.atlas_ax,'Position',[0.5,0,0.5,0.9]);
-hold on; axis image off; colormap(gray); caxis([0,400]);
+hold on; axis image off; colormap(gray); clim([0,400]);
 gui_data.atlas_im_h = imagesc(gui_data.histology_ccf(1).tv_slices, ...
     'Parent',gui_data.atlas_ax,'ButtonDownFcn',@mouseclick_atlas);
 
@@ -77,7 +91,7 @@ gui_data.atlas_im_h = imagesc(gui_data.histology_ccf(1).tv_slices, ...
 gui_data.histology_control_points = repmat({zeros(0,2)},length(gui_data.slice_im),1);
 gui_data.atlas_control_points = repmat({zeros(0,2)},length(gui_data.slice_im),1);
 
-gui_data.histology_control_points_plot = plot(gui_data.histology_ax,nan,nan,'.w','MarkerSize',20);
+gui_data.histology_control_points_plot = plot(gui_data.histology_ax,nan,nan,'.r','MarkerSize',20);
 gui_data.atlas_control_points_plot = plot(gui_data.atlas_ax,nan,nan,'.r','MarkerSize',20);
 
 % If there was previously auto-alignment, intitialize with that
@@ -242,7 +256,7 @@ elseif isfield(gui_data,'histology_ccf_auto_alignment')
 
 else
     % If nothing available, use identity transform
-    tform = affine2d;
+    tform = affinetform2d;
     title(gui_data.histology_ax,'No alignment');
 end
 
@@ -276,6 +290,8 @@ gui_data = guidata(gui_fig);
 
 % Set next histology slice
 set(gui_data.histology_im_h,'CData',gui_data.slice_im{gui_data.curr_slice})
+clim(gui_data.histology_ax,[0,0.5*max(gui_data.slice_im{gui_data.curr_slice},[],'all')]);
+
 set(gui_data.atlas_im_h,'CData',gui_data.histology_ccf(gui_data.curr_slice).tv_slices);
 
 % Plot control points for slice
