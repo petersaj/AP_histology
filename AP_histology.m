@@ -337,14 +337,24 @@ annotations_menu_idx = contains({gui_data.menu.view.Children.Text},'annotations'
 annotations_view = strcmp(gui_data.menu.view.Children(annotations_menu_idx).Checked,'on');
 if annotations_view && isfield(AP_histology_processing,'annotation')
     for curr_probe = 1:length(AP_histology_processing.annotation.probe)
+        
         curr_segment = AP_histology_processing.annotation.probe(curr_probe).segments{gui_data.curr_slice};
         if isempty(curr_segment)
             continue
         end
+
+        % Add line
         segment_line = images.roi.Line('Position', ...
             AP_histology_processing.annotation.probe(curr_probe).segments{gui_data.curr_slice});
         segment_mask = imdilate(createMask(segment_line,false(size(im_display))),ones(overlay_dilation));
         im_display = imoverlay(im_display,segment_mask,'y');
+
+        % Add label
+        im_display = insertText(im_display, ...
+            mean(AP_histology_processing.annotation.probe(curr_probe).segments{gui_data.curr_slice},1), ...
+            AP_histology_processing.annotation.probe(curr_probe).label, ...
+            'FontSize',min(200,round(max(size(im_display))*0.03)));
+
     end
 end
 

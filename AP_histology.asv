@@ -345,6 +345,12 @@ if annotations_view && isfield(AP_histology_processing,'annotation')
             AP_histology_processing.annotation.probe(curr_probe).segments{gui_data.curr_slice});
         segment_mask = imdilate(createMask(segment_line,false(size(im_display))),ones(overlay_dilation));
         im_display = imoverlay(im_display,segment_mask,'y');
+
+        %%%%%
+        insertText(im_display, ..
+        
+
+
     end
 end
 

@@ -74,7 +74,7 @@ function add_probe_segment(currentObject, eventdata, gui_fig)
                 cell(size(histology_scroll_guidata.data));
         end
 
-        AP_histology_processing.annotation.probe(probe_idx).segments{histology_scroll_guidata.curr_im} = ...
+        AP_histology_processing.annotation.probe(probe_idx).segments{histology_scroll_guidata.curr_im_idx} = ...
             probe_line.Position;
 
         % Save processing
