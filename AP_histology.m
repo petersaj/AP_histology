@@ -59,9 +59,9 @@ uimenu(gui_data.menu.atlas,'Text','Load aligned atlas','MenuSelectedFcn', ...
 uimenu(gui_data.menu.atlas,'Text','Choose histology atlas slices','MenuSelectedFcn', ...
     {@ap_histology.match_histology_atlas,gui_fig});
 uimenu(gui_data.menu.atlas,'Text','Auto-align histology/atlas slices','MenuSelectedFcn', ...
-    {@ap_histology.align_auto_histology_atlas,gui_fig});
+    {@ap_histology.align_auto_histology_atlas,gui_fig},'Enable','off');
 uimenu(gui_data.menu.atlas,'Text','Manual align histology/atlas slices','MenuSelectedFcn', ...
-    {@ap_histology.align_manual_histology_atlas_v2,gui_fig});
+    {@ap_histology.align_manual_histology_atlas_v2,gui_fig},'Enable','off');
 
 % Annotation menu
 gui_data.menu.annotation = uimenu(gui_fig,'Text','Annotation');
@@ -490,7 +490,10 @@ gui_data.aligned_ccf = cellfun(@(x) max(x,1),slice_atlas_aligned,'uni',false);
 guidata(gui_fig, gui_data);
 
 % Enable and check histology view
-atlas_menu_idx = contains({gui_data.menu.view.Children.Text},'atlas');
+atlas_align_menu_idx = contains({gui_data.menu.atlas.Children.Text},'align','IgnoreCase',true);
+gui_data.menu.atlas.Children(atlas_align_menu_idx).Enable = 'on';
+
+atlas_menu_idx = contains({gui_data.menu.view.Children.Text},'atlas','IgnoreCase',true);
 gui_data.menu.view.Children(atlas_menu_idx).Enable = 'on';
 gui_data.menu.view.Children(atlas_menu_idx).Checked = 'on';
 

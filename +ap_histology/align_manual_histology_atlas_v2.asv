@@ -7,7 +7,10 @@ histology_guidata = guidata(histology_gui);
 load(histology_guidata.histology_processing_filename);
 
 % Turn on atlas view in histology gui
-
+atlas_menu_idx = contains({histology_guidata.menu.view.Children.Text},'atlas');
+histology_guidata.menu.view.Children(atlas_menu_idx).Enable = 'on';
+histology_guidata.menu.view.Children(atlas_menu_idx).Checked = 'on';
+histology_guidata.update([],[],histology_gui);
 
 % Load atlas, get atlas images
 [av,tv,st] = ap_histology.load_ccf;
