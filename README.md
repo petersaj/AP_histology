@@ -1,3 +1,5 @@
+### A major overhaul is in progress, to be merged soon. To try it out, check out the v2_overhaul branch
+
 Toolbox for aliging histology images to the Allen CCF mouse atlas.
 
 A video demonstration of this toolbox is available here (note - old interface): https://www.youtube.com/watch?v=HKm_G17Wc6g
