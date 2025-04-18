@@ -154,8 +154,9 @@ function previous_slice(currentObject,eventdata,align_gui,histology_gui)
 align_guidata = guidata(align_gui);
 histology_guidata = guidata(histology_gui);
 
-% Increment slice
-new_slice = max(histology_guidata.curr_slice-1,1);
+% Decrement slice
+slice_idx = 1:length(histology_guidata.data);
+new_slice = slice_idx(circshift(slice_idx == histology_guidata.curr_slice,-1));
 histology_guidata.curr_slice = new_slice;
 guidata(histology_gui,histology_guidata);
 
@@ -172,7 +173,8 @@ align_guidata = guidata(align_gui);
 histology_guidata = guidata(histology_gui);
 
 % Increment slice
-new_slice = min(histology_guidata.curr_slice+1,length(histology_guidata.data));
+slice_idx = 1:length(histology_guidata.data);
+new_slice = slice_idx(circshift(slice_idx == histology_guidata.curr_slice,1));
 histology_guidata.curr_slice = new_slice;
 guidata(histology_gui,histology_guidata);
 

@@ -320,10 +320,11 @@ function previous_slice(currentObject, eventdata, gui_fig)
 
 % Get guidata
 gui_data = guidata(gui_fig);
+histology_guidata = guidata(gui_data.histology_gui);
 
 % Change slice based on histology
-histology_guidata = guidata(gui_data.histology_gui);
-new_slice = max(histology_guidata.curr_slice - 1,1);
+slice_idx = 1:length(histology_guidata.data);
+new_slice = slice_idx(circshift(slice_idx == histology_guidata.curr_slice,-1));
 
 gui_data.curr_slice = new_slice;
 guidata(gui_fig,gui_data);
@@ -340,12 +341,11 @@ function next_slice(currentObject, eventdata, gui_fig)
 
 % Get guidata
 gui_data = guidata(gui_fig);
+histology_guidata = guidata(gui_data.histology_gui);
 
 % Change slice based on histology
-histology_guidata = guidata(gui_data.histology_gui);
-new_slice = min(histology_guidata.curr_slice + 1, ...
-    length(histology_guidata.data));
-
+slice_idx = 1:length(histology_guidata.data);
+new_slice = slice_idx(circshift(slice_idx == histology_guidata.curr_slice,1));
 gui_data.curr_slice = new_slice;
 guidata(gui_fig,gui_data);
 
