@@ -39,8 +39,8 @@ histology_guidata = guidata(histology_gui);
 
 % Set flip flag, save
 load(histology_guidata.histology_processing_filename);
-AP_histology_processing.flip(histology_guidata.curr_im,flip_dim) = ...
-    ~AP_histology_processing.flip(histology_guidata.curr_im,flip_dim);
+AP_histology_processing.flip(histology_guidata.curr_im_idx,flip_dim) = ...
+    ~AP_histology_processing.flip(histology_guidata.curr_im_idx,flip_dim);
 save(histology_guidata.histology_processing_filename,'AP_histology_processing');
 
 % Update histology image

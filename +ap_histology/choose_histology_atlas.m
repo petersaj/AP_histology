@@ -1,22 +1,26 @@
-function match_histology_atlas_v2(~,~,histology_gui)
+function choose_histology_atlas(~,~,histology_gui)
 % Part of AP_histology toolbox
 %
 % Choose CCF atlas slices corresponding to histology slices
 
 % Initialize guidata
 gui_data = struct;
-gui_data.curr_histology_slice = 1;
+gui_data.curr_slice = 1;
 
 % Get GUI data and store GUI handles
 histology_guidata = guidata(histology_gui);
 gui_data.histology_gui = histology_gui;
+
+% Disable image scrolling in histology gui
+histology_guidata.scrollbar_image.Enable = 'off';
 
 % Load atlas
 [gui_data.av,gui_data.tv,gui_data.st] = ap_histology.load_ccf;
 
 % Create figure, set button functions
 gui_position = histology_gui.Position;
-gui_fig = figure('WindowScrollWheelFcn',@scroll_atlas_slice, ...
+gui_fig = figure('Name','Atlas slice chooser', ...
+    'WindowScrollWheelFcn',@scroll_atlas_slice, ...
     'KeyPressFcn',@keypress,'Toolbar','none','Menubar','none','color','w', ...
     'Units','normalized','Position',gui_position, ...
     'CloseRequestFcn',@close_gui);
@@ -76,25 +80,12 @@ end
 guidata(gui_fig,gui_data);
 
 % Set the first slice in both GUIs
-histology_guidata.curr_im = 1;
+histology_guidata.curr_slice = 1;
 guidata(gui_data.histology_gui,histology_guidata);
 histology_guidata.update([],[],gui_data.histology_gui);
 
 update_histology_slice(gui_fig);
 update_atlas_slice(gui_fig);
-
-% Print controls
-CreateStruct.Interpreter = 'tex';
-CreateStruct.WindowStyle = 'non-modal';
-msgbox( ...
-    {'\fontsize{12}' ...
-    '\bf Controls: \rm' ...
-    'Left/right arrows: cycle histology slice', ...
-    'Shift + arrows: change atlas rotation', ...
-    'm : change atlas display mode (TV/TV with borders/AV overlay)', ...
-    'Scroll wheel: move CCF slice in/out of plane', ...
-    'Enter: set current histology and CCF slice pair'}, ...
-    'Controls',CreateStruct);
 
 % Buttons: histology-related
 button_strings = {'Previous histology slice','Next histology slice','Set slice','Interpolate slices','Atlas mode'};
@@ -143,7 +134,7 @@ switch eventdata.Key
             gui_data.slice_points(:) = NaN;
             disp('cleared all save points');
         else
-            curr_slice = find(gui_data.image_order == gui_data.curr_histology_slice);
+            curr_slice = find(gui_data.image_order == gui_data.curr_slice);
             gui_data.slice_points(curr_slice,:) = NaN;
             disp('cleared current save point');
         end
@@ -234,17 +225,17 @@ function update_histology_slice(gui_fig)
 gui_data = guidata(gui_fig);
 
 % If there's a saved atlas position, move atlas to there
-curr_slice = gui_data.image_order(gui_data.curr_histology_slice);
+curr_slice = gui_data.image_order(gui_data.curr_slice);
 if all(~isnan(gui_data.slice_points(curr_slice,:)))
     gui_data.atlas_slice_point = gui_data.slice_points(curr_slice,:);
 
-    gui_data.atlas_title.String = sprintf('Histology slice %d: SET',gui_data.curr_histology_slice);
+    gui_data.atlas_title.String = sprintf('Histology slice %d: SET',gui_data.curr_slice);
     gui_data.atlas_title.Color = [0,0.7,0];
 
     guidata(gui_fig,gui_data);
     update_atlas_slice(gui_fig);
 else
-    gui_data.atlas_title.String = sprintf('Histology slice %d: NOT SET',gui_data.curr_histology_slice);
+    gui_data.atlas_title.String = sprintf('Histology slice %d: NOT SET',gui_data.curr_slice);
     gui_data.atlas_title.Color = [0.7,0,0];
 end
 
@@ -325,47 +316,6 @@ guidata(gui_fig, gui_data);
 end
 
 
-function close_gui(gui_fig,~)
-
-% Get guidata
-gui_data = guidata(gui_fig);
-
-% Check that a CCF slice point exists for each histology slice
-if any(isnan(gui_data.slice_points(:)))
-    createmode = struct;
-    createmode.Interpreter = 'tex';
-    createmode.WindowStyle = 'modal';
-    uiwait(msgbox('\fontsize{12} Note: some histology slice(s) not assigned atlas slice', ...
-        'Incomplete slice assignment','warn',createmode));
-end
-
-opts.Default = 'Yes';
-opts.Interpreter = 'tex';
-user_confirm = questdlg('\fontsize{14} Save atlas slices?','Confirm exit',opts);
-switch user_confirm
-    case 'Yes'     
-        % Load processing and save CCF slice data
-        histology_guidata = guidata(gui_data.histology_gui);
-        load(histology_guidata.histology_processing_filename);
-
-        AP_histology_processing.histology_ccf.slice_vector = gui_data.slice_vector;
-        AP_histology_processing.histology_ccf.slice_points = gui_data.slice_points;
-
-        save(histology_guidata.histology_processing_filename,'AP_histology_processing');
-
-        delete(gui_fig);
-
-    case 'No'
-        % Close without saving
-        delete(gui_fig);
-
-    case 'Cancel'
-        % Do nothing
-
-end 
-
-end
-
 function previous_slice(currentObject, eventdata, gui_fig)
 
 % Get guidata
@@ -373,12 +323,12 @@ gui_data = guidata(gui_fig);
 
 % Change slice based on histology
 histology_guidata = guidata(gui_data.histology_gui);
-new_slice = max(histology_guidata.curr_im - 1,1);
+new_slice = max(histology_guidata.curr_slice - 1,1);
 
-gui_data.curr_histology_slice = new_slice;
+gui_data.curr_slice = new_slice;
 guidata(gui_fig,gui_data);
 
-histology_guidata.curr_im = new_slice;
+histology_guidata.curr_slice = new_slice;
 guidata(gui_data.histology_gui,histology_guidata);
 histology_guidata.update([],[],gui_data.histology_gui);
 
@@ -393,13 +343,13 @@ gui_data = guidata(gui_fig);
 
 % Change slice based on histology
 histology_guidata = guidata(gui_data.histology_gui);
-new_slice = min(histology_guidata.curr_im + 1, ...
+new_slice = min(histology_guidata.curr_slice + 1, ...
     length(histology_guidata.data));
 
-gui_data.curr_histology_slice = new_slice;
+gui_data.curr_slice = new_slice;
 guidata(gui_fig,gui_data);
 
-histology_guidata.curr_im = new_slice;
+histology_guidata.curr_slice = new_slice;
 guidata(gui_data.histology_gui,histology_guidata);
 histology_guidata.update([],[],gui_data.histology_gui);
 
@@ -412,7 +362,7 @@ function set_slice(currentObject, eventdata, gui_fig)
 % Get guidata
 gui_data = guidata(gui_fig);
 
-curr_slice = gui_data.image_order(gui_data.curr_histology_slice);
+curr_slice = gui_data.image_order(gui_data.curr_slice);
 
 gui_data.slice_vector = get_camera_vector(gui_data);
 gui_data.slice_points(curr_slice,:) = gui_data.atlas_slice_point;
@@ -486,3 +436,47 @@ update_atlas_slice(gui_fig)
 end
 
 
+function close_gui(gui_fig,~)
+
+% Get guidata
+gui_data = guidata(gui_fig);
+histology_guidata = guidata(gui_data.histology_gui);
+
+% Check that a CCF slice point exists for each histology slice
+if any(isnan(gui_data.slice_points(:)))
+    createmode = struct;
+    createmode.Interpreter = 'tex';
+    createmode.WindowStyle = 'modal';
+    uiwait(msgbox('\fontsize{12} Note: some histology slice(s) not assigned atlas slice', ...
+        'Incomplete slice assignment','warn',createmode));
+end
+
+opts.Default = 'Yes';
+opts.Interpreter = 'tex';
+user_confirm = questdlg('\fontsize{14} Save atlas slices?','Confirm exit',opts);
+switch user_confirm
+    case 'Yes'     
+        % Load processing and save CCF slice data
+        load(histology_guidata.histology_processing_filename);
+
+        AP_histology_processing.histology_ccf.slice_vector = gui_data.slice_vector;
+        AP_histology_processing.histology_ccf.slice_points = gui_data.slice_points;
+
+        save(histology_guidata.histology_processing_filename,'AP_histology_processing');
+
+    case 'No'
+        % Close without saving
+
+    case 'Cancel'
+        % Do nothing
+        return
+
+end 
+
+% Close figure
+delete(gui_fig);
+
+% Re-enable image scrolling in histology gui
+histology_guidata.scrollbar_image.Enable = 'on';
+
+end

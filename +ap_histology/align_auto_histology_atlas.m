@@ -4,7 +4,7 @@ function align_auto_histology_atlas(~,~,histology_gui)
 % Auto aligns histology slices and matched CCF slices by outline registration
 
 % User confirm
-user_confirm = questdlg('Auto-align histology/atlas slices?','Confirm','Yes','No','No');
+user_confirm = questdlg('Auto-align atlas slices to histology?','Confirm','Yes','No','No');
 if strcmpi(user_confirm,'no')
     return
 end
