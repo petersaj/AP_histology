@@ -25,6 +25,7 @@ gui_data.menu.atlas.Enable = processed_images_present;
 
 gui_data.menu.annotation.Enable = atlas_alignment_present;
 gui_data.menu.view.Enable = atlas_alignment_present;
+gui_data.menu.export.Enable = neuropixels_annotations_present;
 
 
 % Set text
