@@ -46,7 +46,7 @@ function add_probe_segment(currentObject, eventdata, gui_fig)
         if isempty(probe_label)
             return
         end
-        probe_line = drawline(histology_scroll_guidata.im_h.Parent,'color','red');
+        probe_line = drawline(histology_scroll_guidata.im_h.Parent,'color','y');
 
         % If the line is just a click, don't include
         curr_line_length = sqrt(sum(abs(diff(probe_line.Position,[],1)).^2));

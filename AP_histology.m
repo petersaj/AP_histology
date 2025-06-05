@@ -3,10 +3,9 @@ function AP_histology(image_path,channel_colors)
 %
 % GUI for viewing and processing histology
 
-%
-% TO DO: 
-% if image path set, open images
-% if colors set, use colors
+% TO DO:
+% - allow input arguments for image path and channel colors
+% - save clim?
 
 
 %% Create gui data structure
@@ -338,20 +337,20 @@ annotations_view = strcmp(gui_data.menu.view.Children(annotations_menu_idx).Chec
 if annotations_view && isfield(AP_histology_processing,'annotation')
     for curr_probe = 1:length(AP_histology_processing.annotation.probe)
         
-        curr_segment = AP_histology_processing.annotation.probe(curr_probe).segments{gui_data.curr_slice};
+        curr_segment = AP_histology_processing.annotation.probe(curr_probe).segments{curr_im_idx};
         if isempty(curr_segment)
             continue
         end
 
         % Add line
         segment_line = images.roi.Line('Position', ...
-            AP_histology_processing.annotation.probe(curr_probe).segments{gui_data.curr_slice});
+            AP_histology_processing.annotation.probe(curr_probe).segments{curr_im_idx});
         segment_mask = imdilate(createMask(segment_line,false(size(im_display))),ones(overlay_dilation));
         im_display = imoverlay(im_display,segment_mask,'y');
 
         % Add label
         im_display = insertText(im_display, ...
-            mean(AP_histology_processing.annotation.probe(curr_probe).segments{gui_data.curr_slice},1), ...
+            mean(AP_histology_processing.annotation.probe(curr_probe).segments{curr_im_idx},1), ...
             AP_histology_processing.annotation.probe(curr_probe).label, ...
             'FontSize',min(200,round(max(size(im_display))*0.03)));
 
