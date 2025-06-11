@@ -342,25 +342,29 @@ if annotations_view && isfield(AP_histology_processing,'annotation')
     for curr_annotation = 1:length(AP_histology_processing.annotation)
         
         curr_vertices = AP_histology_processing.annotation(curr_annotation).vertices{curr_im_idx};
-        if isempty(curr_segment)
+        if isempty(curr_vertices)
             continue
         end
 
-        if size(curr_vertices,1)>2
+        if size(curr_vertices,1) == 2
+            % If 2 verticies, add line
+            annotation_shape = images.roi.Line('Position', ...
+                AP_histology_processing.annotation(curr_annotation).vertices{curr_im_idx});
+            annotation_mask = imdilate(createMask(annotation_shape,false(size(im_display))),ones(overlay_dilation));
+        elseif size(curr_vertices,1) > 2
             % If multiple verticies, add polygon
-
-        elseif size(curr_vertices,1) == 2
-            % Add line
-            segment_line = images.roi.Line('Position', ...
-                AP_histology_processing.annotation.probe(curr_annotation).segments{curr_im_idx});
-            segment_mask = imdilate(createMask(segment_line,false(size(im_display))),ones(overlay_dilation));
-            im_display = imoverlay(im_display,segment_mask,'y');
+            annotation_shape = images.roi.Polygon('Position', ...
+                AP_histology_processing.annotation(curr_annotation).vertices{curr_im_idx});
+            annotation_mask = imdilate(createMask(annotation_shape,false(size(im_display))),ones(overlay_dilation));
         end
+
+        
+        im_display = imoverlay(im_display,annotation_mask,'y');
 
         % Add label
         im_display = insertText(im_display, ...
-            mean(AP_histology_processing.annotation.probe(curr_annotation).segments{curr_im_idx},1), ...
-            AP_histology_processing.annotation.probe(curr_annotation).label, ...
+            mean(AP_histology_processing.annotation(curr_annotation).vertices{curr_im_idx},1), ...
+            AP_histology_processing.annotation(curr_annotation).label, ...
             'FontSize',min(200,round(max(size(im_display))*0.03)));
 
     end

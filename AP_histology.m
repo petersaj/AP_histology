@@ -350,13 +350,15 @@ if annotations_view && isfield(AP_histology_processing,'annotation')
             % If 2 verticies, add line
             annotation_shape = images.roi.Line('Position', ...
                 AP_histology_processing.annotation(curr_annotation).vertices{curr_im_idx});
+            annotation_mask = imdilate(createMask(annotation_shape,false(size(im_display))),ones(overlay_dilation));
         elseif size(curr_vertices,1) > 2
             % If multiple verticies, add polygon
             annotation_shape = images.roi.Polygon('Position', ...
                 AP_histology_processing.annotation(curr_annotation).vertices{curr_im_idx});
+            annotation_mask = imdilate(bwperim(createMask(annotation_shape,false(size(im_display)))),ones(overlay_dilation));
         end
 
-        annotation_mask = imdilate(createMask(annotation_shape,false(size(im_display))),ones(overlay_dilation));
+        
         im_display = imoverlay(im_display,annotation_mask,'y');
 
         % Add label

@@ -32,7 +32,8 @@ for curr_slice = find(cellfun(@(x) ~isempty(x),AP_histology_processing.annotatio
         slice_ccf(curr_slice).dv(annotation_vertices_histology_idx));
 end
 
-annotation_vertices_ccf = cat(1,annotation_vertices_ccf{:});
+annotation_vertices_ccf = permute(cat(1,annotation_vertices_ccf{:}),[1,3,2]);
+
 
 
 %% Draw probe on 3D CCF
@@ -59,13 +60,11 @@ brain_outline = patch(ccf_ax, ...
     'FaceColor',[0.7,0.7,0.7],'EdgeColor','none','FaceAlpha',0.1);
 
 % Plot annotation vertices
-plot3(ccf_ax,annotation_vertices_ccf(:,1),annotation_vertices_ccf(:,2),annotation_vertices_ccf(:,3), ...
+plot(ccf_ax,annotation_vertices_ccf(:,:,1),annotation_vertices_ccf(:,:,2),annotation_vertices_ccf(:,:,3), ...
     'color','r','linewidth',2)
 
 
 %% Get areas along probe
-
-% IN PROGRESS - switch probe vs volume annotation? 
 
 % Sample CCF at each micron along probe trajectory
 % (atlas is 10um, so each micron is 0.1 voxel)
