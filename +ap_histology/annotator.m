@@ -57,22 +57,18 @@ function add_area(currentObject, eventdata, gui_fig, annotate_fcn)
         
         if ~isfield(AP_histology_processing,'annotation')
             AP_histology_processing.annotation = struct;
-        end
-        if ~isfield(AP_histology_processing.annotation,'volume')
-            AP_histology_processing.annotation = ...
-                struct('label',cell(0),'vertices',cell(0));
-        end
+        end        
         
         % Find probe index in annotations, add segment
-        area_idx = find(strcmp(volume_label,[AP_histology_processing.annotation.label]));
-        if isempty(area_idx)
-            area_idx = length(AP_histology_processing.annotation)+1;
-            AP_histology_processing.annotation(area_idx).label = volume_label;
-            AP_histology_processing.annotation(area_idx).vertices = ...
+        annotation_idx = find(strcmp(volume_label,[AP_histology_processing.annotation.label]));
+        if isempty(annotation_idx)
+            annotation_idx = length(AP_histology_processing.annotation)+1;
+            AP_histology_processing.annotation(annotation_idx).label = volume_label;
+            AP_histology_processing.annotation(annotation_idx).vertices = ...
                 cell(size(histology_scroll_guidata.data));
         end
 
-        AP_histology_processing.annotation(area_idx).vertices{histology_scroll_guidata.curr_im_idx} = ...
+        AP_histology_processing.annotation(annotation_idx).vertices{histology_scroll_guidata.curr_im_idx} = ...
             volume_polygon.Position;
 
         % Save processing
