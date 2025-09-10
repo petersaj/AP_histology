@@ -17,29 +17,43 @@ gui_fig = figure('color','w','ToolBar','none','MenuBar','none', ...
 
 gui_data.probe_label_text = ...
     uicontrol('style','text','BackgroundColor','w','units','normalized', ...
-    'Position',[0,0.5,0.5,0.2],'String','Volume label','FontSize',16);
+    'Position',[0,0.5,0.5,0.2],'String','Annotation label','FontSize',14);
 
 gui_data.probe_label = ...
     uicontrol('style','edit','units','normalized', ...
     'BackgroundColor',[0.9,0.9,0.9], ...
     'Position',[0,0.3,0.5,0.2],'FontSize',14);
 
-uicontrol('style','pushbutton','units','normalized', ...
-    'Position',[0.5,0,0.5,0.5],'String','Add polygon', ...
-    'BackgroundColor',[0.9,0.9,1], ...
-    'FontSize',14','Callback',{@add_area,gui_fig,@drawpolygon});
+ui_buttons = [];
+button_height = 0.25;
+button_fontsize = 12;
 
-uicontrol('style','pushbutton','units','normalized', ...
-    'Position',[0.5,0.5,0.5,0.5],'String','Add polygon (assist)', ...
-    'BackgroundColor',[0.9,0.9,1], ...
-    'FontSize',14','Callback',{@add_area,gui_fig,@drawassisted});
+ui_buttons(end+1) = uicontrol('style','pushbutton','units','normalized', ...
+    'Position',[0.5,button_height*length(ui_buttons),0.5,button_height], ...
+    'String','Polygon (assist)','BackgroundColor',[0.9,0.9,1], ...
+    'FontSize',button_fontsize,'Callback',{@draw_annotation,gui_fig,@drawassisted});
+
+ui_buttons(end+1) = uicontrol('style','pushbutton','units','normalized', ...
+    'Position',[0.5,button_height*length(ui_buttons),0.5,button_height], ...
+    'String','Polygon','BackgroundColor',[0.9,0.9,1], ...
+    'FontSize',button_fontsize,'Callback',{@draw_annotation,gui_fig,@drawpolygon});
+
+ui_buttons(end+1) = uicontrol('style','pushbutton','units','normalized', ...
+    'Position',[0.5,button_height*length(ui_buttons),0.5,button_height], ...
+    'String','Point','BackgroundColor',[0.9,0.9,1], ...
+    'FontSize',button_fontsize,'Callback',{@draw_annotation,gui_fig,@drawpoint});
+
+ui_buttons(end+1) = uicontrol('style','pushbutton','units','normalized', ...
+    'Position',[0.5,button_height*length(ui_buttons),0.5,button_height], ...
+    'String','Line','BackgroundColor',[0.9,0.9,1], ...
+    'FontSize',button_fontsize,'Callback',{@draw_annotation,gui_fig,@drawline});
 
 % Update gui data
 guidata(gui_fig,gui_data);
 
 end
 
-function add_area(currentObject, eventdata, gui_fig, annotate_fcn)
+function draw_annotation(currentObject, eventdata, gui_fig, annotate_fcn)
 
         % Get gui data
         gui_data = guidata(gui_fig);
@@ -50,7 +64,7 @@ function add_area(currentObject, eventdata, gui_fig, annotate_fcn)
         if isempty(volume_label)
             return
         end
-        volume_polygon = annotate_fcn(histology_scroll_guidata.im_h.Parent,'color','y');
+        curr_annotation = annotate_fcn(histology_scroll_guidata.im_h.Parent,'color','y');
 
         % Load processing and add fields if necessary
         load(histology_scroll_guidata.histology_processing_filename);
@@ -59,7 +73,7 @@ function add_area(currentObject, eventdata, gui_fig, annotate_fcn)
             AP_histology_processing.annotation = struct;
         end        
         
-        % Find probe index in annotations, add segment
+        % Find probe index in annotations, add current annotation
         annotation_idx = find(strcmp(volume_label,[AP_histology_processing.annotation.label]));
         if isempty(annotation_idx)
             annotation_idx = length(AP_histology_processing.annotation)+1;
@@ -69,13 +83,13 @@ function add_area(currentObject, eventdata, gui_fig, annotate_fcn)
         end
 
         AP_histology_processing.annotation(annotation_idx).vertices{histology_scroll_guidata.curr_im_idx} = ...
-            volume_polygon.Position;
+            curr_annotation.Position;
 
         % Save processing
         save(histology_scroll_guidata.histology_processing_filename, 'AP_histology_processing');
 
         % Delete line object, update histology image
-        volume_polygon.delete;
+        curr_annotation.delete;
         histology_scroll_guidata.update([],[],gui_data.histology_scroll_gui);
 
 end
