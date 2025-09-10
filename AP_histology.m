@@ -145,11 +145,12 @@ function load_images(currentObject, eventdata, gui_fig)
 % Get guidata
 gui_data = guidata(gui_fig);
 
-% Restore default guidata and turn off all views
+% Restore default guidata
 default_gui_data = gui_data.default_gui_data;
 gui_data = gui_data.default_gui_data;
 gui_data.default_gui_data = default_gui_data;
-[gui_data.menu.view.Children.Checked] = deal(false);
+% (to turn off all views by default)
+% [gui_data.menu.view.Children.Checked] = deal(false);
 
 % Pick image path
 gui_data.image_path = uigetdir([],'Select path with raw images');

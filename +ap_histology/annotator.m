@@ -1,15 +1,15 @@
-function annotator(~,~,histology_scroll_gui)
+function annotator(~,~,histology_gui)
 % Annotate volume of interest by polygon on each slice
 
 % Initialize gui data, add scroll image axis
 gui_data = struct;
-gui_data.histology_scroll_gui = histology_scroll_gui;
+gui_data.histology_gui = histology_gui;
 
 % Create GUI
-fig_height = histology_scroll_gui.Position(4)/4;
+fig_height = histology_gui.Position(4)/4;
 fig_width = fig_height;
-fig_x = histology_scroll_gui.Position(1);
-fig_y = sum(histology_scroll_gui.Position([2,4])) - fig_height;
+fig_x = histology_gui.Position(1);
+fig_y = sum(histology_gui.Position([2,4])) - fig_height;
 fig_position = [fig_x,fig_y,fig_width,fig_height];
 
 gui_fig = figure('color','w','ToolBar','none','MenuBar','none', ...
@@ -51,23 +51,32 @@ ui_buttons(end+1) = uicontrol('style','pushbutton','units','normalized', ...
 % Update gui data
 guidata(gui_fig,gui_data);
 
+% Ensure annotation view turned on, update image
+histology_guidata = guidata(gui_data.histology_gui);
+annotations_menu_idx = contains({histology_guidata.menu.view.Children.Text},'annotations','IgnoreCase',true);
+histology_guidata.menu.view.Children(annotations_menu_idx).Checked = 'on';
+histology_guidata.update([],[],gui_data.histology_gui);
+
 end
 
 function draw_annotation(currentObject, eventdata, gui_fig, annotate_fcn)
 
         % Get gui data
         gui_data = guidata(gui_fig);
-        histology_scroll_guidata = guidata(gui_data.histology_scroll_gui);
+        histology_guidata = guidata(gui_data.histology_gui);
 
         % Draw probe segment line (or if no label, do nothing)
         volume_label = gui_data.probe_label.String;
         if isempty(volume_label)
+            histology_guidata.update([],[],gui_data.histology_gui,'Cannot annotate without label')
             return
+        else
+            histology_guidata.update([],[],gui_data.histology_gui,sprintf('Draw annotation: %s',volume_label))
         end
-        curr_annotation = annotate_fcn(histology_scroll_guidata.im_h.Parent,'color','y');
+        curr_annotation = annotate_fcn(histology_guidata.im_h.Parent,'color','y');
 
         % Load processing and add fields if necessary
-        load(histology_scroll_guidata.histology_processing_filename);
+        load(histology_guidata.histology_processing_filename);
         
         if ~isfield(AP_histology_processing,'annotation')
             AP_histology_processing.annotation = struct;
@@ -79,18 +88,18 @@ function draw_annotation(currentObject, eventdata, gui_fig, annotate_fcn)
             annotation_idx = length(AP_histology_processing.annotation)+1;
             AP_histology_processing.annotation(annotation_idx).label = volume_label;
             AP_histology_processing.annotation(annotation_idx).vertices = ...
-                cell(size(histology_scroll_guidata.data));
+                cell(size(histology_guidata.data));
         end
 
-        AP_histology_processing.annotation(annotation_idx).vertices{histology_scroll_guidata.curr_im_idx} = ...
+        AP_histology_processing.annotation(annotation_idx).vertices{histology_guidata.curr_im_idx} = ...
             curr_annotation.Position;
 
         % Save processing
-        save(histology_scroll_guidata.histology_processing_filename, 'AP_histology_processing');
+        save(histology_guidata.histology_processing_filename, 'AP_histology_processing');
 
         % Delete line object, update histology image
         curr_annotation.delete;
-        histology_scroll_guidata.update([],[],gui_data.histology_scroll_gui);
+        histology_guidata.update([],[],gui_data.histology_gui);
 
 end
 
