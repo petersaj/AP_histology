@@ -66,12 +66,12 @@ function draw_annotation(currentObject, eventdata, gui_fig, annotate_fcn)
         histology_guidata = guidata(gui_data.histology_gui);
 
         % Draw probe segment line (or if no label, do nothing)
-        volume_label = gui_data.probe_label.String;
-        if isempty(volume_label)
+        annotation_label = gui_data.probe_label.String;
+        if isempty(annotation_label)
             histology_guidata.update([],[],gui_data.histology_gui,'Cannot annotate without label')
             return
         else
-            histology_guidata.update([],[],gui_data.histology_gui,sprintf('Draw annotation: %s',volume_label))
+            histology_guidata.update([],[],gui_data.histology_gui,sprintf('Draw annotation: %s',annotation_label))
         end
         curr_annotation = annotate_fcn(histology_guidata.im_h.Parent,'color','y');
 
@@ -79,14 +79,14 @@ function draw_annotation(currentObject, eventdata, gui_fig, annotate_fcn)
         load(histology_guidata.histology_processing_filename);
         
         if ~isfield(AP_histology_processing,'annotation')
-            AP_histology_processing.annotation = struct;
+            AP_histology_processing.annotation = struct('label',cell(0),'vertices',cell(0));
         end        
         
         % Find probe index in annotations, add current annotation
-        annotation_idx = find(strcmp(volume_label,[AP_histology_processing.annotation.label]));
+        annotation_idx = find(strcmp(annotation_label,[AP_histology_processing.annotation.label]));
         if isempty(annotation_idx)
             annotation_idx = length(AP_histology_processing.annotation)+1;
-            AP_histology_processing.annotation(annotation_idx).label = volume_label;
+            AP_histology_processing.annotation(annotation_idx).label = annotation_label;
             AP_histology_processing.annotation(annotation_idx).vertices = ...
                 cell(size(histology_guidata.data));
         end
