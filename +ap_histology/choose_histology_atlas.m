@@ -464,6 +464,9 @@ switch user_confirm
 
         save(histology_guidata.histology_processing_filename,'AP_histology_processing');
 
+        % Auto-align slices
+        ap_histology.align_auto_histology_atlas([],[],gui_data.histology_gui);
+        
     case 'No'
         % Close without saving
 
@@ -475,6 +478,9 @@ end
 
 % Close figure
 delete(gui_fig);
+
+% Update histology GUI and load saved histology slices
+histology_guidata.update([],[],gui_data.histology_gui);
 
 % Re-enable image scrolling in histology gui
 histology_guidata.scrollbar_image.Enable = 'on';

@@ -53,12 +53,11 @@ uimenu(gui_data.menu.preprocess,'Text','Flip slices','MenuSelectedFcn', ...
 
 % Atlas menu
 gui_data.menu.atlas = uimenu(gui_fig,'Text','Atlas');
-uimenu(gui_data.menu.atlas,'Text','Load histology atlas slices','MenuSelectedFcn', ...
-    {@load_aligned_atlas,gui_fig});
-uimenu(gui_data.menu.atlas,'Text','Choose histology atlas slices','MenuSelectedFcn', ...
-    {@ap_histology.choose_histology_atlas,gui_fig});
 
-gui_data.menu.atlas_align = uimenu(gui_data.menu.atlas,'Text','Align','Enable','off');
+uimenu(gui_data.menu.atlas,'Text','Choose histology atlas slices','MenuSelectedFcn', ...
+    {@ap_histology.choose_histology_atlas,gui_fig},'Enable','on');
+
+gui_data.menu.atlas_align = uimenu(gui_data.menu.atlas,'Text','Align atlas slices to histology','Enable','off');
 uimenu(gui_data.menu.atlas_align,'Text','Automatic','MenuSelectedFcn', ...
     {@ap_histology.align_auto_histology_atlas,gui_fig});
 uimenu(gui_data.menu.atlas_align,'Text','Manual','MenuSelectedFcn', ...
@@ -129,8 +128,9 @@ gui_data.im_text = text( ...
     interp1([0,1],gui_data.im_h.Parent.YLim,0.05), ...
     '','color','w','BackgroundColor','k','FontSize',14);
 
-% Save update function handle for external calling
+% Save function handles for external calling
 gui_data.update = @update_image;
+gui_data.load_atlas_slices = @load_aligned_atlas;
 
 % Set default gui data for restoring on load
 gui_data.default_gui_data = gui_data;
@@ -232,6 +232,13 @@ guidata(gui_fig,gui_data);
 % Update first image
 update_image([], [], gui_fig);
 
+% Load atlas slices, if they exist
+gui_data = guidata(gui_fig);
+load(gui_data.histology_processing_filename)
+if isfield(gui_data.AP_histology_processing,'histology_ccf')
+    load_aligned_atlas([],[],gui_fig);
+end
+
 end
 
 function channel_colorpicker(currentObject, eventdata, gui_fig)
@@ -315,7 +322,7 @@ if atlas_view && isfield(gui_data,'atlas_slices')
         atlas_tform = fitgeotform2d( ...
             AP_histology_processing.histology_ccf.control_points.atlas{curr_im_idx}, ...
             AP_histology_processing.histology_ccf.control_points.histology{curr_im_idx},'pwl');
-    else
+    elseif isfield(AP_histology_processing.histology_ccf,'atlas2histology_tform')
         % Automatic alignment
         atlas_tform = AP_histology_processing.histology_ccf.atlas2histology_tform{curr_im_idx};
     end
@@ -386,6 +393,22 @@ gui_data.scrollbar_image.Value = gui_data.curr_slice;
 
 % Prioritze drawing this figure
 drawnow;
+
+%%% Update menu items
+
+% Toggle enable: atlas menu
+atlas_slice_menu_idx = ~contains({gui_data.menu.atlas.Children.Text},'choose','IgnoreCase',true);
+[gui_data.menu.atlas.Children(atlas_slice_menu_idx).Enable] = deal(isfield(gui_data.AP_histology_processing,'histology_ccf'));
+
+% Toggle enable: view aligned atlas
+% (assume alignment exists if any fields beyond slice info)
+atlas_aligned_flag = isfield(gui_data.AP_histology_processing,'histology_ccf') && ...
+    any(contains(fieldnames(gui_data.AP_histology_processing.histology_ccf),'atlas2histology'));
+view_aligned_atlas_menu_idx = contains({gui_data.menu.view.Children.Text},'atlas','IgnoreCase',true);
+gui_data.menu.view.Children(view_aligned_atlas_menu_idx).Enable = atlas_aligned_flag;
+if ~atlas_aligned_flag
+    gui_data.menu.view.Children(view_aligned_atlas_menu_idx).Checked = atlas_aligned_flag;
+end
 
 % Update guidata
 guidata(gui_fig, gui_data);
@@ -516,7 +539,7 @@ load(gui_data.histology_processing_filename);
 set(gui_data.im_text, 'Position', ...
     [interp1([0,1],gui_data.im_h.Parent.XLim,0.05), ...
     interp1([0,1],gui_data.im_h.Parent.YLim,0.05),0], ...
-    'String','Loading aligned atlas...');
+    'String','Loading aligned atlas slices...');
 drawnow;
 
 % Load atlas
@@ -536,13 +559,9 @@ gui_data.atlas_slices = {slice_atlas.av}';
 % Update guidata
 guidata(gui_fig, gui_data);
 
-% Enable and check histology view
-atlas_align_menu_idx = contains({gui_data.menu.atlas.Children.Text},'align','IgnoreCase',true);
-[gui_data.menu.atlas.Children(atlas_align_menu_idx).Enable] = deal('on');
-
-atlas_menu_idx = contains({gui_data.menu.view.Children.Text},'atlas','IgnoreCase',true);
-gui_data.menu.view.Children(atlas_menu_idx).Enable = 'on';
-gui_data.menu.view.Children(atlas_menu_idx).Checked = 'on';
+% Turn on atlas view
+view_aligned_atlas_menu_idx = contains({gui_data.menu.view.Children.Text},'atlas','IgnoreCase',true);
+gui_data.menu.view.Children(view_aligned_atlas_menu_idx).Checked = true;
 
 % Update image
 gui_data.im_text.String = '';

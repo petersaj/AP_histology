@@ -53,23 +53,21 @@ uimenu(gui_data.menu.preprocess,'Text','Flip slices','MenuSelectedFcn', ...
 
 % Atlas menu
 gui_data.menu.atlas = uimenu(gui_fig,'Text','Atlas');
-uimenu(gui_data.menu.atlas,'Text','Load histology atlas slices','MenuSelectedFcn', ...
-    {@load_aligned_atlas,gui_fig});
-uimenu(gui_data.menu.atlas,'Text','Choose histology atlas slices','MenuSelectedFcn', ...
-    {@ap_histology.choose_histology_atlas,gui_fig});
 
-gui_data.menu.atlas_align = uimenu(gui_data.menu.atlas,'Text','Align','Enable','off');
+uimenu(gui_data.menu.atlas,'Text','Choose histology atlas slices','MenuSelectedFcn', ...
+    {@ap_histology.choose_histology_atlas,gui_fig},'Enable','on');
+
+gui_data.menu.atlas_align = uimenu(gui_data.menu.atlas,'Text','Align atlas slices to histology','Enable','off');
 uimenu(gui_data.menu.atlas_align,'Text','Automatic','MenuSelectedFcn', ...
     {@ap_histology.align_auto_histology_atlas,gui_fig});
 uimenu(gui_data.menu.atlas_align,'Text','Manual','MenuSelectedFcn', ...
     {@ap_histology.align_manual_histology_atlas_v2,gui_fig});
 
+uimenu(gui_data.menu.atlas,'Text','Load histology atlas slices','MenuSelectedFcn', ...
+    {@load_aligned_atlas,gui_fig},'Enable','off');
+
 % Annotation menu
 gui_data.menu.annotation = uimenu(gui_fig,'Text','Annotation');
-uimenu(gui_data.menu.annotation,'Text','Probes','MenuSelectedFcn', ...
-    {@ap_histology.annotate_probes,gui_fig});
-uimenu(gui_data.menu.annotation,'Text','Volume','MenuSelectedFcn', ...
-    {@ap_histology.annotate_volume,gui_fig});
 uimenu(gui_data.menu.annotation,'Text','Annotator','MenuSelectedFcn', ...
     {@ap_histology.annotator,gui_fig});
 
@@ -149,11 +147,12 @@ function load_images(currentObject, eventdata, gui_fig)
 % Get guidata
 gui_data = guidata(gui_fig);
 
-% Restore default guidata and turn off all views
+% Restore default guidata
 default_gui_data = gui_data.default_gui_data;
 gui_data = gui_data.default_gui_data;
 gui_data.default_gui_data = default_gui_data;
-[gui_data.menu.view.Children.Checked] = deal(false);
+% (to turn off all views by default)
+% [gui_data.menu.view.Children.Checked] = deal(false);
 
 % Pick image path
 gui_data.image_path = uigetdir([],'Select path with raw images');
@@ -209,7 +208,7 @@ gui_data.colors = channel_colors(1:n_channels,:);
 % Set scrollbar properties
 set(gui_data.scrollbar_image, ...
     'min',1,'max',length(images),'value',1, ...
-    'sliderstep',repmat(min(0,1/(length(images)-1)),1,2));
+    'sliderstep',repmat(max(0,1/(length(images)-1)),1,2));
 
 set(gui_data.scrollbar_channel, ...
     'min',1,'max',n_channels,'value',1, ...
@@ -318,7 +317,7 @@ if atlas_view && isfield(gui_data,'atlas_slices')
         atlas_tform = fitgeotform2d( ...
             AP_histology_processing.histology_ccf.control_points.atlas{curr_im_idx}, ...
             AP_histology_processing.histology_ccf.control_points.histology{curr_im_idx},'pwl');
-    else
+    elseif isfield(AP_histology_processing.histology_ccf,'atlas2histology_tform')
         % Automatic alignment
         atlas_tform = AP_histology_processing.histology_ccf.atlas2histology_tform{curr_im_idx};
     end
@@ -355,7 +354,7 @@ if annotations_view && isfield(AP_histology_processing,'annotation')
             % If multiple verticies, add polygon
             annotation_shape = images.roi.Polygon('Position', ...
                 AP_histology_processing.annotation(curr_annotation).vertices{curr_im_idx});
-            annotation_mask = imdilate(createMask(annotation_shape,false(size(im_display))),ones(overlay_dilation));
+            annotation_mask = imdilate(bwperim(createMask(annotation_shape,false(size(im_display)))),ones(overlay_dilation));
         end
 
         
@@ -389,6 +388,18 @@ gui_data.scrollbar_image.Value = gui_data.curr_slice;
 
 % Prioritze drawing this figure
 drawnow;
+
+%%% Update menu items
+
+% Toggle enable: atlas menu
+atlas_slice_menu_idx = ~contains({gui_data.menu.atlas.Children.Text},'choose','IgnoreCase',true);
+[gui_data.menu.atlas.Children(atlas_slice_menu_idx).Enable] = deal(isfield(gui_data.AP_histology_processing,'histology_ccf'));
+
+% Toggle enable: view aligned atlas
+
+view_aligned_atlas_menu_idx = contains({gui_data.menu.view.Children.Text},'atlas','IgnoreCase',true);
+gui_data.menu.view.Children(view_aligned_atlas_menu_idx).Enable = 'on';
+gui_data.menu.view.Children(view_aligned_atlas_menu_idx).Checked = 'on';
 
 % Update guidata
 guidata(gui_fig, gui_data);
@@ -538,14 +549,6 @@ gui_data.atlas_slices = {slice_atlas.av}';
 
 % Update guidata
 guidata(gui_fig, gui_data);
-
-% Enable and check histology view
-atlas_align_menu_idx = contains({gui_data.menu.atlas.Children.Text},'align','IgnoreCase',true);
-[gui_data.menu.atlas.Children(atlas_align_menu_idx).Enable] = deal('on');
-
-atlas_menu_idx = contains({gui_data.menu.view.Children.Text},'atlas','IgnoreCase',true);
-gui_data.menu.view.Children(atlas_menu_idx).Enable = 'on';
-gui_data.menu.view.Children(atlas_menu_idx).Checked = 'on';
 
 % Update image
 gui_data.im_text.String = '';

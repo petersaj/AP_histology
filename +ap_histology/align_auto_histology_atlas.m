@@ -1,17 +1,26 @@
-function align_auto_histology_atlas(~,~,histology_gui)
+function align_auto_histology_atlas(~,~,histology_gui,user_confirm_flag)
 % Part of AP_histology toolbox
 %
 % Auto aligns histology slices and matched CCF slices by outline registration
 
+if ~exist('user_confirm_flag','var')
+    user_confirm_flag = true;
+end
+
 % User confirm
-user_confirm = questdlg('Auto-align atlas slices to histology?','Confirm','Yes','No','No');
-if strcmpi(user_confirm,'no')
-    return
+if user_confirm_flag
+    user_confirm = questdlg('Auto-align atlas slices to histology?','Confirm','Yes','No','No');
+    if strcmpi(user_confirm,'no')
+        return
+    end
 end
 
 % Get gui data
 histology_guidata = guidata(histology_gui);
 load(histology_guidata.histology_processing_filename);
+
+% Update status
+histology_guidata.update([],[],histology_gui,'Auto-aligning atlas/histology slices...');
 
 % Grab slice images from histology scroller and grayscale 
 % (apply rigid transform)
@@ -128,26 +137,35 @@ linkaxes([im_ax,atlas_ax]);
 title(atlas_ax,'Histology/atlas alignment overlay');
 
 % Prompt for save
-opts.Default = 'Yes';
-opts.Interpreter = 'tex';
-user_confirm = questdlg('\fontsize{14} Save alignments?','Confirm exit','Yes','No',opts);
-switch user_confirm
-    case 'Yes'
-        % Package
-        AP_histology_processing.histology_ccf.atlas2histology_tform = atlas2histology_tform;
-        AP_histology_processing.histology_ccf.atlas2histology_size = atlas2histology_size;
+if user_confirm_flag
+    opts.Default = 'Yes';
+    opts.Interpreter = 'tex';
+    user_confirm = questdlg('\fontsize{14} Save alignments?','Confirm exit','Yes','No',opts);
+    switch user_confirm
         
-        % Save
-        save(histology_guidata.histology_processing_filename,'AP_histology_processing');
-        disp('Saved alignments');
+        case 'Yes'
+            % Package
+            AP_histology_processing.histology_ccf.atlas2histology_tform = atlas2histology_tform;
+            AP_histology_processing.histology_ccf.atlas2histology_size = atlas2histology_size;
 
-    case 'No'
-        % Close without saving
-        close(align_fig);
+            % Save
+            save(histology_guidata.histology_processing_filename,'AP_histology_processing');
+            disp('Saved alignments');
 
+            % Load atlas slices into histology GUI
+            histology_guidata.load_atlas_slices([],[],histology_gui)
+
+            % Turn on atlas view
+            view_aligned_atlas_menu_idx = contains({histology_guidata.menu.view.Children.Text},'atlas','IgnoreCase',true);
+            histology_guidata.menu.view.Children(view_aligned_atlas_menu_idx).Checked = true;
+            histology_guidata.update([],[],histology_gui);
+
+        case 'No'
+            % Close without saving
+            close(align_fig);
+
+    end
 end
-
-
 
 
 
