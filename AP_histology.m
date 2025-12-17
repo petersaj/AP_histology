@@ -345,7 +345,7 @@ annotations_view = strcmp(gui_data.menu.view.Children(annotations_menu_idx).Chec
 if annotations_view && isfield(AP_histology_processing,'annotation')
     for curr_annotation = 1:length(AP_histology_processing.annotation)
         
-        curr_vertices = AP_histology_processing.annotation(curr_annotation).vertices{curr_im_idx};
+        curr_vertices = AP_histology_processing.annotation(curr_annotation).vertices_histology{curr_im_idx};
         if isempty(curr_vertices)
             continue
         end
@@ -353,12 +353,12 @@ if annotations_view && isfield(AP_histology_processing,'annotation')
         if size(curr_vertices,1) == 2
             % If 2 verticies, add line
             annotation_shape = images.roi.Line('Position', ...
-                AP_histology_processing.annotation(curr_annotation).vertices{curr_im_idx});
+                AP_histology_processing.annotation(curr_annotation).vertices_histology{curr_im_idx});
             annotation_mask = imdilate(createMask(annotation_shape,false(size(im_display))),ones(overlay_dilation));
         elseif size(curr_vertices,1) > 2
             % If multiple verticies, add polygon
             annotation_shape = images.roi.Polygon('Position', ...
-                AP_histology_processing.annotation(curr_annotation).vertices{curr_im_idx});
+                AP_histology_processing.annotation(curr_annotation).vertices_histology{curr_im_idx});
             annotation_mask = imdilate(bwperim(createMask(annotation_shape,false(size(im_display)))),ones(overlay_dilation));
         end
 
@@ -367,7 +367,7 @@ if annotations_view && isfield(AP_histology_processing,'annotation')
 
         % Add label
         im_display = insertText(im_display, ...
-            mean(AP_histology_processing.annotation(curr_annotation).vertices{curr_im_idx},1), ...
+            mean(AP_histology_processing.annotation(curr_annotation).vertices_histology{curr_im_idx},1), ...
             AP_histology_processing.annotation(curr_annotation).label, ...
             'FontSize',min(200,round(max(size(im_display))*0.03)));
 
@@ -546,15 +546,18 @@ drawnow;
 [av,tv,gui_data.st] = ap_histology.load_ccf;
 
 % Grab atlas images
-slice_atlas = struct('tv',cell(size(gui_data.data)), 'av',cell(size(gui_data.data)));
+n_slices = length(gui_data.data);
+slice_atlas = struct('tv',cell(n_slices,1), 'av',cell(n_slices,1));
+slice_atlas_ccf = struct('ap',cell(n_slices,1),'ml',cell(n_slices,1),'dv',cell(n_slices,1));
 for curr_slice = 1:length(gui_data.data)
-    slice_atlas(curr_slice) = ...
+    [slice_atlas(curr_slice),slice_atlas_ccf(curr_slice)] = ...
         ap_histology.grab_atlas_slice(av,tv, ...
         AP_histology_processing.histology_ccf.slice_vector, ...
         AP_histology_processing.histology_ccf.slice_points(curr_slice,:), 1);
 end
 
 gui_data.atlas_slices = {slice_atlas.av}';
+gui_data.atlas_slice_coords = slice_atlas_ccf;
 
 % Update guidata
 guidata(gui_fig, gui_data);
