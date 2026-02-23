@@ -20,9 +20,10 @@ gui_data.annotation_label_text = ...
     'Position',[0,0.5,0.5,0.2],'String','Annotation label','FontSize',14);
 
 gui_data.annotation_label = ...
-    uicontrol('style','edit','units','normalized', ...
+    uicontrol('style','popupmenu','string','No annotations','units','normalized', ...
     'BackgroundColor',[0.9,0.9,0.9], ...
-    'Position',[0,0.3,0.5,0.2],'FontSize',14);
+    'Position',[0,0.3,0.5,0.2],'FontSize',14, ...
+    'Callback',{@select_annotation,gui_fig});
 
 ui_buttons = [];
 button_height = 1/5; % (just manual at the moment, not autospaced)
@@ -31,7 +32,7 @@ button_fontsize = 12;
 ui_buttons(end+1) = uicontrol('style','pushbutton','units','normalized', ...
     'Position',[0.5,button_height*length(ui_buttons),0.5,button_height], ...
     'String','Delete on slice','BackgroundColor',[0.9,0.9,1], ...
-    'FontSize',button_fontsize,'Callback',{@delete_annotation_slice,gui_fig,@delete_on_slce});
+    'FontSize',button_fontsize,'Callback',{@delete_annotation_slice,gui_fig});
 
 ui_buttons(end+1) = uicontrol('style','pushbutton','units','normalized', ...
     'Position',[0.5,button_height*length(ui_buttons),0.5,button_height], ...
@@ -62,6 +63,15 @@ annotations_menu_idx = contains({histology_guidata.menu.view.Children.Text},'ann
 histology_guidata.menu.view.Children(annotations_menu_idx).Checked = 'on';
 histology_guidata.update([],[],gui_data.histology_gui);
 
+% Populate annotation menu with any extant annotations
+load(histology_guidata.histology_processing_filename);
+if isfield(AP_histology_processing,'annotation')
+    annotation_labels = {AP_histology_processing.annotation.label};
+else
+    annotation_labels = {};
+end
+gui_data.annotation_label.String = horzcat(annotation_labels,{'New annotation'});
+
 end
 
 function draw_annotation(currentObject, eventdata, gui_fig, annotate_fcn)
@@ -72,7 +82,7 @@ function draw_annotation(currentObject, eventdata, gui_fig, annotate_fcn)
         histology_guidata = guidata(gui_data.histology_gui);
 
         % Draw annotation segment line (or if no label, do nothing)
-        annotation_label = gui_data.annotation_label.String;
+        annotation_label = gui_data.annotation_label.String{gui_data.annotation_label.Value};
         if isempty(annotation_label)
             histology_guidata.update([],[],gui_data.histology_gui,'Cannot annotate without label')
             return
@@ -81,9 +91,8 @@ function draw_annotation(currentObject, eventdata, gui_fig, annotate_fcn)
         end
         curr_annotation = annotate_fcn(histology_guidata.im_h.Parent,'color','y');
 
-        % Load processing and add fields if necessary
+        % Load processing and add annotation fields if necessary
         load(histology_guidata.histology_processing_filename);
-        
         if ~isfield(AP_histology_processing,'annotation')
             AP_histology_processing.annotation = struct('label',cell(0),...
                 'vertices_histology',cell(0),'vertices_ccf',cell(0));
@@ -147,7 +156,7 @@ function delete_annotation_slice(currentObject, eventdata, gui_fig, annotate_fcn
         load(histology_guidata.histology_processing_filename);
 
         % Delete any selected annotations on slice
-        annotation_label = gui_data.annotation_label.String;
+        annotation_label = gui_data.annotation_label.String{gui_data.annotation_label.Value};
         annotation_idx = find(strcmp(annotation_label,{AP_histology_processing.annotation.label}));
         
         AP_histology_processing.annotation(annotation_idx).vertices_histology{histology_guidata.curr_im_idx} = [];
@@ -164,16 +173,35 @@ end
 
 
 
-function add_annotation(currentObject, eventdata, gui_fig, annotate_fcn)
+function select_annotation(currentObject, eventdata, gui_fig)
 
 % Get gui data
 gui_data = guidata(gui_fig);
 histology_guidata = guidata(gui_data.histology_gui);
 
+% Get currently selected annotation
+annotation_label = gui_data.annotation_label.String{gui_data.annotation_label.Value};
 
-
-annotation_label = inputdlg('New annotation label');
-
+% New annotation
+if strcmp(annotation_label,'New annotation')
+    % Query new label
+    new_annotation_label = inputdlg('New annotation label');
+    if ~isempty(new_annotation_label)
+        % Load processing 
+        load(histology_guidata.histology_processing_filename);
+        % Add new label to list
+        if isfield(AP_histology_processing,'annotation')
+            annotation_labels = {AP_histology_processing.annotation.label};
+        else
+            annotation_labels = {};
+        end
+        gui_data.annotation_label.String = horzcat(annotation_labels,new_annotation_label,{'New annotation'});
+        % Select new label
+        gui_data.annotation_label.Value = length(gui_data.annotation_label.String)-1;
+        % Update gui data
+        guidata(gui_fig,gui_data);
+    end
+end
 
 end
 
