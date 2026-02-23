@@ -90,7 +90,7 @@ function draw_annotation(currentObject, eventdata, gui_fig, annotate_fcn)
         end        
         
         % Find annotation index in annotations, add current annotation
-        annotation_idx = find(strcmp(annotation_label,{AP_histology_processing.annotation.label}));
+        annotation_idx = find(strcmp(annotation_label,[AP_histology_processing.annotation.label]));
         if isempty(annotation_idx)
             % (if no annotation with that name, create one)
             annotation_idx = length(AP_histology_processing.annotation)+1;
