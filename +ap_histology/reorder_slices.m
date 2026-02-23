@@ -1,18 +1,15 @@
-function reorder_slices(~,~,histology_toolbar_gui)
+function reorder_slices(~,~,histology_gui)
 
-% Get images (from path in GUI)
-histology_toolbar_guidata = guidata(histology_toolbar_gui);
-
-slice_dir = dir(fullfile(histology_toolbar_guidata.save_path,'*.tif'));
-slice_fn = natsortfiles(cellfun(@(path,fn) fullfile(path,fn), ...
-    {slice_dir.folder},{slice_dir.name},'uni',false));
-
-slice_im = cell(length(slice_fn),1);
-for curr_slice = 1:length(slice_fn)
-   slice_im{curr_slice} = imread(slice_fn{curr_slice});  
+% User confirm
+user_confirm = questdlg('Set new slice order?','Confirm','Yes','No','No');
+if strcmpi(user_confirm,'no')
+    return
 end
 
-% Plot all (downsampled) images
+% Get gui data
+histology_guidata = guidata(histology_gui);
+
+% Plot all images (downsampled)
 screen_size_px = get(0,'screensize');
 gui_aspect_ratio = 1.7; % width/length
 gui_width_fraction = 0.6; % fraction of screen width to occupy
@@ -24,12 +21,21 @@ gui_position = [...
 
 gui_fig = figure('Toolbar','none','Menubar','none','color','w', ...
     'Units','pixels','Position',gui_position);
+
+% Plot images (grab BW from histology scroller)
 tile_h = tiledlayout('flow','TileSpacing','none');
-image_h = gobjects(length(slice_im),1);
-for curr_slice = 1:length(slice_fn)
+image_h = gobjects(length(histology_guidata.data),1);
+
+downsample_factor = 1/10;
+for curr_slice = 1:length(histology_guidata.data)
     nexttile; 
-    image_h(curr_slice) = imagesc(imresize(slice_im{curr_slice},1/10,'nearest'));
+    curr_slice_bw = ...
+        max(min(histology_guidata.data{curr_slice} - permute(histology_guidata.clim(:,1),[2,3,1]), ...
+        permute(diff(histology_guidata.clim,[],2),[2,3,1])),[],3);
+    image_h(curr_slice) = imagesc(imresize(curr_slice_bw,downsample_factor));
     axis image off;
+    colormap(gray);
+    drawnow;
 end
 
 % Set click function
@@ -41,10 +47,9 @@ title(tile_h,'Click to assign/un-assign slice order','FontSize',12);
 % Package image handles and slice number index in figure
 gui_data = struct;
 
-gui_data.slice_fn = slice_fn;
-
+gui_data.histology_gui = histology_gui;
 gui_data.image_h = image_h;
-gui_data.slice_idx = nan(length(slice_im),1);
+gui_data.slice_idx = nan(length(histology_guidata.data),1);
 guidata(gui_fig,gui_data)
 
 end
@@ -90,21 +95,15 @@ end
 
 function save_reordered_slices(gui_data)
 
-% Make re-ordered filenames (with '_reorder to avoid overwriting)
-reordered_source_filenames = gui_data.slice_fn(gui_data.slice_idx);
-reorder_target_filenames = strrep(gui_data.slice_fn,'.tif','_reorder.tif');
+% Get histology toolbar data
+histology_guidata = guidata(gui_data.histology_gui);
 
-% Rename files (with '_reorder')
-for curr_im = 1:length(gui_data.slice_fn)
-    movefile(reordered_source_filenames{curr_im},reorder_target_filenames{curr_im});
-end
+% Load processing and save re-ordering
+load(histology_guidata.histology_processing_filename);
 
-% Rename files (with original filenames)
-for curr_im = 1:length(gui_data.slice_fn)
-    movefile(reorder_target_filenames{curr_im},gui_data.slice_fn{curr_im});
-end
+AP_histology_processing.image_order = gui_data.slice_idx;
 
-disp('Saved re-ordered slices');
+save(histology_guidata.histology_processing_filename,'AP_histology_processing');
 
 end
 
