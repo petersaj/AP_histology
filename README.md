@@ -1,4 +1,4 @@
-Toolbox for viewing, aligning Allen CCF mouse atlas, and annotating slice histology images.
+MATLAB toolbox for viewing, aligning Allen CCF mouse atlas, and annotating slice histology images.
 
 Inspiration from SHARP-Track by Philip Shamash (https://www.biorxiv.org/content/10.1101/447995v1).
 
