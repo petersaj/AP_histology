@@ -15,7 +15,7 @@ Inspiration from SHARP-Track by Philip Shamash (https://www.biorxiv.org/content/
 # Usage
 See the [wiki](https://github.com/petersaj/AP_histology/wiki) for instructions on use
 
-# Bug reporting, questions, and suggestions
+# Contact
 Please raise a [GitHub Issue](https://github.com/petersaj/AP_histology/issues) for any problems or questions
 
 # Major change log
