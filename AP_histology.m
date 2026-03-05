@@ -167,7 +167,7 @@ if ~exist(gui_data.histology_processing_filename,'file')
 end
 
 % Load images
-image_dir = dir(fullfile(gui_data.image_path,'*.tif'));
+image_dir = dir(fullfile(gui_data.image_path,'*.tif*'));
 image_filenames = cellfun(@(path,name) fullfile(path,name), ...
     {image_dir.folder},{image_dir.name},'uni',false);
 [~,sort_idx] = ap_histology.natsortfiles(image_filenames);
