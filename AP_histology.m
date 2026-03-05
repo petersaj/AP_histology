@@ -206,11 +206,11 @@ gui_data.colors = channel_colors(1:n_channels,:);
 % Set scrollbar properties
 set(gui_data.scrollbar_image, ...
     'min',1,'max',length(images),'value',1, ...
-    'sliderstep',repmat(max(0,1/(length(images)-1)),1,2));
+    'sliderstep',repmat(max(0,1/max(1,(length(images)-1))),1,2));
 
 set(gui_data.scrollbar_channel, ...
     'min',1,'max',n_channels,'value',1, ...
-    'sliderstep',repmat(1/(n_channels-1),1,2), ...
+    'sliderstep',repmat(max(0,1/max(1,(length(images)-1))),1,2), ...
     'backgroundcolor',gui_data.colors(1,:));
 
 set(gui_data.scrollbar_white, ...
@@ -413,6 +413,12 @@ gui_data.menu.view.Children(view_aligned_atlas_menu_idx).Enable = atlas_aligned_
 
 if ~atlas_aligned_flag
     gui_data.menu.view.Children(view_aligned_atlas_menu_idx).Checked = atlas_aligned_flag;
+end
+
+% Disable image/channel scrollbars if only one image
+if isscalar(gui_data.data)
+    gui_data.scrollbar_image.Enable = 'off';
+    gui_data.scrollbar_channel.Enable = 'off';
 end
 
 % Update guidata
