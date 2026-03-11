@@ -181,8 +181,9 @@ for curr_im = 1:length(sort_idx)
     'String',curr_text); 
     drawnow;
 
-    images{curr_im} = tiffreadVolume( ...
-        image_filenames{sort_idx(curr_im)});
+    % Modified by Jongwon, 2026-03-11: squeeze extra dimension from tiffreadVolume output (H x W x 1 x C -> H x W x C)
+    images{curr_im} = squeeze(tiffreadVolume( ...
+        image_filenames{sort_idx(curr_im)}));
 end
 gui_data.im_text.String = '';
 
@@ -191,6 +192,9 @@ n_channels = size(images{1},3);
 clim_min = squeeze(min(cell2mat(cellfun(@(x) min(x,[],[1,2]),images,'uni',false)),[],1));
 clim_max = squeeze(max(cell2mat(cellfun(@(x) max(x,[],[1,2]),images,'uni',false)),[],1));
 gui_data.clim = [clim_min,clim_max];
+% Removed by Jongwon, 2026-03-11: removed zero-range clim padding as it caused incorrect color scaling
+zero_range_idx = gui_data.clim(:,1) == gui_data.clim(:,2);
+gui_data.clim(zero_range_idx, 2) = gui_data.clim(zero_range_idx, 1) + 255;
 
 if ~exist('channel_colors','var') || isempty(channel_colors)
     % Default channel colors
@@ -256,7 +260,7 @@ end
 % Update guidata and image
 guidata(gui_fig,gui_data);
 update_image([], [], gui_fig);
-
+disp(gui_data.clim)
 end
 
 function menu_check(currentObject, eventdata, gui_fig)
@@ -293,10 +297,10 @@ gui_data.curr_im_idx = curr_im_idx;
 % Set color and color limit
 color_vector = permute(gui_data.colors,[3,4,1,2]);
 clim_permute = permute(gui_data.clim,[2,3,1]);
-
+% Modified by Jongwon, 2026-03-11: added +eps to denominator to prevent division by zero causing invisible images
 im_rescaled = double(min(max(gui_data.data{curr_im_idx} - ...
     clim_permute(1,1,:),0),clim_permute(2,1,:)))./ ...
-    double(clim_permute(2,1,:));
+    double(clim_permute(2,1,:)+eps);
 
 im_rgb = min(permute(sum(im_rescaled.*color_vector,3),[1,2,4,3]),1);
 
