@@ -220,7 +220,8 @@ else
     channel_colors(image_metadata.plane_brightfield,:) = 1;
 end
 
-gui_data.colors = channel_colors;
+gui_data.channel_colors = channel_colors;
+gui_data.channel_visibility = true(n_channels,1);
 
 % Set scrollbar properties
 set(gui_data.scrollbar_image, ...
@@ -230,7 +231,7 @@ set(gui_data.scrollbar_image, ...
 set(gui_data.scrollbar_channel, ...
     'min',1,'max',n_channels,'value',1, ...
     'sliderstep',repmat(max(0,1/max(1,(length(n_channels)-1))),1,2), ...
-    'backgroundcolor',gui_data.colors(1,:));
+    'backgroundcolor',gui_data.channel_colors(1,:));
 
 set(gui_data.scrollbar_white, ...
     'min',0,'max',max(clim_max),'value',max(gui_data.clim(:,2)), ...
@@ -291,15 +292,16 @@ else
 end
 gui_data.curr_im_idx = curr_im_idx;
 
-% Set color and color limit
-color_vector = permute(gui_data.colors,[3,4,1,2]);
+% Set color and color limit (turn off any channels with visibility off)
+color_vector = permute(gui_data.channel_colors,[3,4,1,2]);
 clim_permute = permute(gui_data.clim,[2,3,1]);
 
 im_rescaled = double(min(max(gui_data.data{curr_im_idx} - ...
     clim_permute(1,1,:),0),clim_permute(2,1,:)))./ ...
     double(clim_permute(2,1,:));
 
-im_rgb = min(permute(sum(im_rescaled.*color_vector,3),[1,2,4,3]),1);
+im_rgb = min(permute(sum(im_rescaled.*color_vector.* ...
+    reshape(gui_data.channel_visibility,1,1,[]),3),[1,2,4,3]),1);
 
 % Apply rigid transform
 im_display = ap_histology.rigid_transform(im_rgb,curr_im_idx,AP_histology_processing);
@@ -497,7 +499,7 @@ gui_data = guidata(gui_fig);
 curr_channel = round(gui_data.scrollbar_channel.Value);
 gui_data.scrollbar_channel.Value = curr_channel;
 gui_data.scrollbar_channel.BackgroundColor = ...
-    gui_data.colors(curr_channel,:);
+    gui_data.channel_colors(curr_channel,:);
 
 % Set black/white scrollbars for selected channel
 gui_data.scrollbar_black.Value = gui_data.clim(curr_channel,1);

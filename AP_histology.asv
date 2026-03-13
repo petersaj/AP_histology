@@ -206,25 +206,22 @@ if isempty(image_metadata)
 else
     % Metadata-translated channel colors
     filter_colors = {...
-        "GFP",{0,1,0}; ...
-        "RFP",{1,0,0}; ...
-        "DAPI",{0,0,1}; ...
-        "Cy5",{1,0,1}};
+        "GFP",[0,1,0]; ...
+        "RFP",[1,0,0]; ...
+        "DAPI",[0,0,1]; ...
+        "Cy5",[1,0,1]};
 
     filter_idx = arrayfun(@(filter) find(cellfun(@(filter_options) ...
         any(strfind(filter,filter_options)),filter_colors(:,1))), ...
         image_metadata.plane_filters);
 
-
-
-    strfind(x,y)
-
-
+    channel_colors = vertcat(filter_colors{filter_idx,2});
+    % (brightfield: set to white)
+    channel_colors(image_metadata.plane_brightfield,:) = 1;
 end
 
-
-
-gui_data.colors = channel_colors;
+gui_data.channel_colors = channel_colors;
+gui_data.channel_visibility = true(n_channels,1);
 
 % Set scrollbar properties
 set(gui_data.scrollbar_image, ...
@@ -233,8 +230,8 @@ set(gui_data.scrollbar_image, ...
 
 set(gui_data.scrollbar_channel, ...
     'min',1,'max',n_channels,'value',1, ...
-    'sliderstep',repmat(max(0,1/max(1,(length(images)-1))),1,2), ...
-    'backgroundcolor',gui_data.colors(1,:));
+    'sliderstep',repmat(max(0,1/max(1,(length(n_channels)-1))),1,2), ...
+    'backgroundcolor',gui_data.channel_colors(1,:));
 
 set(gui_data.scrollbar_white, ...
     'min',0,'max',max(clim_max),'value',max(gui_data.clim(:,2)), ...
@@ -296,12 +293,15 @@ end
 gui_data.curr_im_idx = curr_im_idx;
 
 % Set color and color limit
-color_vector = permute(gui_data.colors,[3,4,1,2]);
+color_vector = permute(gui_data.channel_colors,[3,4,1,2]);
 clim_permute = permute(gui_data.clim,[2,3,1]);
 
 im_rescaled = double(min(max(gui_data.data{curr_im_idx} - ...
     clim_permute(1,1,:),0),clim_permute(2,1,:)))./ ...
     double(clim_permute(2,1,:));
+
+% Turn off any channels with visibility off
+gui_data.channel_visibility
 
 im_rgb = min(permute(sum(im_rescaled.*color_vector,3),[1,2,4,3]),1);
 
@@ -501,7 +501,7 @@ gui_data = guidata(gui_fig);
 curr_channel = round(gui_data.scrollbar_channel.Value);
 gui_data.scrollbar_channel.Value = curr_channel;
 gui_data.scrollbar_channel.BackgroundColor = ...
-    gui_data.colors(curr_channel,:);
+    gui_data.channel_colors(curr_channel,:);
 
 % Set black/white scrollbars for selected channel
 gui_data.scrollbar_black.Value = gui_data.clim(curr_channel,1);
