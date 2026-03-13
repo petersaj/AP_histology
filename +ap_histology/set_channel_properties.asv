@@ -33,7 +33,7 @@ channel_properties_table.Layout.Column = [1,size(channel_properties,2)];
 channel_properties_table.DisplayDataChangedFcn = {@update_channel_properties,histology_gui,channel_properties_table};
 
 % Set initial options
-update_channel_properties([],[],histology_gui,channel_properties_table)
+update_channel_properties(obj,event,histology_gui,channel_properties_table)
 
 end
 
