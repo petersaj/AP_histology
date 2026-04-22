@@ -587,9 +587,10 @@ gui_data.atlas_slice_coords = slice_atlas_ccf;
 % Update guidata
 guidata(gui_fig, gui_data);
 
-% Turn on atlas view
+% Turn on atlas view (if atlas is aligned)
+atlas_aligned_flag = any(isfield(AP_histology_processing,{'control_points','atlas2histology_tform'}));
 view_aligned_atlas_menu_idx = contains({gui_data.menu.view.Children.Text},'atlas','IgnoreCase',true);
-gui_data.menu.view.Children(view_aligned_atlas_menu_idx).Checked = true;
+gui_data.menu.view.Children(view_aligned_atlas_menu_idx).Checked = atlas_aligned_flag;
 
 % Update image
 gui_data.im_text.String = '';
