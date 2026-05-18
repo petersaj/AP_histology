@@ -125,7 +125,7 @@ uicontrol('style','text','units','normalized', ...
     'String','Image path:')
 
 % Draw image, set hover function (for CCF)
-im_ax = axes('Units','normalized','Position',[0,4*scrollbar_height,1,1-4*scrollbar_height]);
+im_ax = axes('Units','normalized','Position',[0,4*scrollbar_height,1,1-4*scrollbar_height],'color',[0.5,0.5,0.5]);
 gui_data.im_h = imagesc(im_ax,NaN);
 axis image off;
 gui_fig.WindowButtonMotionFcn = {@hover_label,gui_fig};
@@ -404,6 +404,11 @@ set(gui_data.im_text, 'Position', ...
 
 % Ensure image scrollbar matches image number (if update called externally)
 gui_data.scrollbar_image.Value = gui_data.curr_slice;
+
+% Set axis limits to max across images
+max_lim = max(cell2mat(cellfun(@size,gui_data.data,'uni',false)),[],1);
+gui_data.im_h.Parent.XLim = [0,max_lim(2)]+0.5;
+gui_data.im_h.Parent.YLim = [0,max_lim(1)]+0.5;
 
 % Prioritze drawing this figure
 drawnow;
