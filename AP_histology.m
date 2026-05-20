@@ -75,6 +75,13 @@ uimenu(gui_data.menu.view,'Text','Aligned atlas','Checked','off', ...
 uimenu(gui_data.menu.view,'Text','Annotations','Checked','on', ...
     'MenuSelectedFcn',{@menu_check,gui_fig},'Enable','on');
 
+% Export menu
+gui_data.menu.export = uimenu(gui_fig,'Text','Export');
+uimenu(gui_data.menu.export,'Text','Vector images','Enable','off', ...
+    'MenuSelectedFcn',{@ap_histology.export_annotated_histology_vector,gui_fig});
+uimenu(gui_data.menu.export,'Text','Probe IBL coordinates','Enable','off', ...
+    'MenuSelectedFcn',{@ap_histology.export_probe_ibl,gui_fig});
+
 %%%% 
 
 % Set up scrollbars
@@ -134,7 +141,7 @@ gui_fig.WindowButtonMotionFcn = {@hover_label,gui_fig};
 gui_data.im_text = text( ...
     interp1([0,1],gui_data.im_h.Parent.XLim,0.05), ...
     interp1([0,1],gui_data.im_h.Parent.YLim,0.05), ...
-    '','color','w','BackgroundColor','k','FontSize',14);
+    '','color','w','BackgroundColor','k','FontSize',14,'Interpreter','none');
 
 % Save function handles for external calling
 gui_data.update = @update_image;
@@ -433,6 +440,11 @@ gui_data.menu.view.Children(view_aligned_atlas_menu_idx).Enable = atlas_aligned_
 if ~atlas_aligned_flag
     gui_data.menu.view.Children(view_aligned_atlas_menu_idx).Checked = atlas_aligned_flag;
 end
+
+% If annotation exists: enable IBL exporting
+ibl_enable = isfield(AP_histology_processing,'annotation');
+ibl_export_menu_idx = contains({gui_data.menu.export.Children.Text},'ibl','IgnoreCase',true);
+gui_data.menu.export.Children(ibl_export_menu_idx).Enable = ibl_enable;
 
 % Disable image/channel scrollbars if only one image
 if isscalar(gui_data.data)
