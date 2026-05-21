@@ -17,11 +17,3 @@ See the [wiki](https://github.com/petersaj/AP_histology/wiki) for instructions o
 
 # Contact
 Please raise a [GitHub Issue](https://github.com/petersaj/AP_histology/issues) for any problems or questions
-
-# Major change log
-2026-02-23 - v2 released. Saved files before this point are incompatible - to use old files, use repo before this date.
-
-2024-02-16 - Split re-order/flip GUIs: re-ordering is now a simpler click interface
-
-2023-11-02 - Created menu GUI for easier interfacing re-structured/improve much of the code, improved auto-align
-
