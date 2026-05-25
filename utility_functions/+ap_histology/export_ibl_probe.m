@@ -1,4 +1,4 @@
-function export_probe_ibl(~,~,histology_gui)
+function export_ibl_probe(~,~,histology_gui)
 % Convert probe CCF coordinates into IBL-standard file to load into IBL
 % ephys processing pipeline (thanks Guido Meijer for help with IBL)
 %
@@ -28,7 +28,7 @@ probe_line_fits_ibl = cellfun(@(x) ...
 for curr_probe = 1:length(probe_line_fits_ibl)
     xyz_picks_struct = struct('xyz_picks', probe_line_fits_ibl{curr_probe});
 
-    save_filename = fullfile(save_path,sprintf('probe%02d',curr_probe),'xyz_picks.json');
+    save_filename = fullfile(save_path,sprintf('probe%02d',curr_probe-1),'xyz_picks.json');
     mkdir(fileparts(save_filename));
 
     writelines(jsonencode(xyz_picks_struct),save_filename);
