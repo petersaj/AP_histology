@@ -523,16 +523,12 @@ function scrollbar_channel_listener(currentObject, eventdata, gui_fig)
 gui_data = guidata(gui_fig);
 
 % Snap scrollbar to selected channel, set color
-curr_channel = round(gui_data.scrollbar_channel.Value);
+curr_channel = (gui_data.scrollbar_channel.Value);
 gui_data.scrollbar_channel.Value = curr_channel;
 gui_data.scrollbar_channel.BackgroundColor = ...
     gui_data.channel_colors(curr_channel,:);
 
 % Set black/white scrollbars for selected channel
-% (matlab bug - scrollbar needs 2x sets to update if last selected)
-gui_data.scrollbar_black.Value = gui_data.scrollbar_black.Min;
-gui_data.scrollbar_white.Value = gui_data.scrollbar_white.Max;
-% (update to actual target value)
 gui_data.scrollbar_black.Value = gui_data.clim(curr_channel,1);
 gui_data.scrollbar_white.Value = gui_data.clim(curr_channel,2);
 
