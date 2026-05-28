@@ -17,7 +17,8 @@ gui_data = struct;
 % Create figure for scrolling and ROIs
 fig_position = [0.025,0.15,0.3,0.7];
 gui_fig = figure('Color',[0.5,0.5,0.5],'Name','AP histology', ...
-    'Units','normalized','position',fig_position,'NumberTitle','off');
+'Units','normalized','position',fig_position,'NumberTitle','off', ...
+'KeyPressFcn',@keypress_main);
 set(gui_fig,'WindowScrollWheelFcn',{@scrollbar_image_MouseWheel, gui_fig});
 
 % Make figure toolbar available 
@@ -134,6 +135,11 @@ uicontrol('style','text','units','normalized', ...
 % Draw image, set hover function (for CCF)
 im_ax = axes('Units','normalized','Position',[0,4*scrollbar_height,1,1-4*scrollbar_height],'color',[0.5,0.5,0.5]);
 gui_data.im_h = imagesc(im_ax,NaN);
+% Track whether user changed view (zoom/pan)
+gui_data.view_xlim = [];
+gui_data.view_ylim = [];
+
+
 axis image off;
 gui_fig.WindowButtonMotionFcn = {@hover_label,gui_fig};
 
@@ -264,6 +270,8 @@ gui_data.data = images;
 gui_data.curr_slice = 1;
 gui_data.curr_im_idx = 1;
 
+gui_data.view_initialized = false;
+
 % Update guidata
 guidata(gui_fig,gui_data);
 
@@ -295,8 +303,11 @@ gui_data = guidata(gui_fig);
 % (change this later: only load given flag reload_processing?)
 % (so small and fast to load, maybe it doesn't matter)
 AP_histology_processing_fn = fullfile(gui_data.image_path,'AP_histology_processing');
-if ~exist(AP_histology_processing_fn,'file')
-    load(AP_histology_processing_fn);
+if exist([AP_histology_processing_fn '.mat'],'file')
+    S = load(AP_histology_processing_fn);
+    AP_histology_processing = S.AP_histology_processing;
+else
+    AP_histology_processing = struct;
 end
 gui_data.AP_histology_processing = AP_histology_processing;
 guidata(gui_fig, gui_data);
@@ -411,12 +422,31 @@ set(gui_data.im_text, 'Position', ...
 % Ensure image scrollbar matches image number (if update called externally)
 gui_data.scrollbar_image.Value = gui_data.curr_slice;
 
-% Set axis limits to max across images
-max_lim = max(cell2mat(cellfun(@size,gui_data.data,'uni',false)),[],1);
-gui_data.im_h.Parent.XLim = [0,max_lim(2)]+0.5;
-gui_data.im_h.Parent.YLim = [0,max_lim(1)]+0.5;
+% Preserve zoom/pan if already valid, otherwise fit to current image
+ax = gui_data.im_h.Parent;
 
-% Prioritze drawing this figure
+% Current limits before any reset
+old_xlim = ax.XLim;
+old_ylim = ax.YLim;
+old_valid = all(isfinite([old_xlim old_ylim])) && ...
+    diff(old_xlim) > 0 && diff(old_ylim) > 0;
+
+% Fit limits for current image size
+curr_im_size = size(gui_data.im_h.CData); % [rows, cols, ...]
+fit_xlim = [0 curr_im_size(2)] + 0.5;
+fit_ylim = [0 curr_im_size(1)] + 0.5;
+
+% First time (or invalid): fit. Otherwise: keep current zoom/pan
+if ~isfield(gui_data,'view_initialized') || ~gui_data.view_initialized || ~old_valid
+    ax.XLim = fit_xlim;
+    ax.YLim = fit_ylim;
+    gui_data.view_initialized = true;
+else
+    ax.XLim = old_xlim;
+    ax.YLim = old_ylim;
+end
+
+% Prioritize drawing this figure
 drawnow;
 
 %%% Update menu items
@@ -659,11 +689,30 @@ if atlas_view
         [interp1([0,1],gui_data.im_h.Parent.XLim,0.05), ...
         interp1([0,1],gui_data.im_h.Parent.YLim,0.05),0], ...
         'String',area_name);
-
+end
+end
+   
+    function keypress_main(src,eventdata)
+gui_fig = src;
+gui_data = guidata(gui_fig);
+if isempty(gui_data) || ~isfield(gui_data,'menu') || ~isfield(gui_data.menu,'view')
+    return
 end
 
+switch lower(eventdata.Key)
+    case 'a'
+        idx = contains({gui_data.menu.view.Children.Text},'aligned atlas','IgnoreCase',true);
+        if any(idx)
+            if strcmpi(gui_data.menu.view.Children(idx).Checked,'on')
+                gui_data.menu.view.Children(idx).Checked = 'off';
+            else
+                gui_data.menu.view.Children(idx).Checked = 'on';
+            end
+            guidata(gui_fig,gui_data);
+            update_image([],[],gui_fig);
+        end
 end
-
+end
 
 
 
