@@ -1,19 +1,8 @@
-[![DOI](https://zenodo.org/badge/223226910.svg)](https://doi.org/10.5281/zenodo.18746422)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo-blue.svg)](https://doi.org/10.5281/zenodo.18746422)
 
 MATLAB toolbox for viewing, aligning Allen CCF mouse atlas, and annotating slice histology images.
 
 Inspiration from SHARP-Track by Philip Shamash (https://www.biorxiv.org/content/10.1101/447995v1).
 
-# Installation 
-* download the Allen CCF mouse atlas [download here](https://osf.io/fv7ed/) *
-* clone this repository
-* add both the CCF mouse atlas and repository to the matlab path
-* [The npy-matlab repository](http://github.com/kwikteam/npy-matlab)
-
-*(note on where these files came from: they are a re-formatted version of [the original atlas](http://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/ccf_2017/), which has been [processed with this script](https://github.com/cortex-lab/allenCCF/blob/master/setup_utils.m))
-
-# Usage
-See the [wiki](https://github.com/petersaj/AP_histology/wiki) for instructions on use
-
-# Contact
-Please raise a [GitHub Issue](https://github.com/petersaj/AP_histology/issues) for any problems or questions
+### Documentation: [Repo wiki](https://github.com/petersaj/AP_histology/wiki)
+### Contact for problems/questions/suggestions: raise [GitHub Issue](https://github.com/petersaj/AP_histology/issues)
