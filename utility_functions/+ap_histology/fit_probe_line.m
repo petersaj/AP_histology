@@ -35,7 +35,9 @@ for curr_probe = 1:length(probe_ccf_vertices)
     probe_direction = probe_fit(:,1);
 
     % (ensure vector goes downward in DV)
-    probe_direction(2) = abs(probe_direction(2));
+    if probe_direction(2) < 0
+        probe_direction = -probe_direction;
+    end
 
     % Get probe unit vector
     probe_vector = mean(probe_ccf_vertices{curr_probe},1) + padarray(probe_direction',[1,0],0,'pre');
