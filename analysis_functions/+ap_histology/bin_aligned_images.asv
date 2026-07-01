@@ -2,7 +2,7 @@ function [image_aligned_binmax,ccf_bin_edges] = bin_aligned_images(histology_pat
 % bin_aligned_images(histology_path,atlas_orientation,atlas_bin_size)
 %
 % Align histology images to CCF, get maximum within CCF bins
-%
+% 
 % INPUTS
 % histology_path - path to AP histology processing file
 % atlas_orientation - 1: AP, 2: DV, 3: ML (default = 1)
@@ -90,38 +90,35 @@ for curr_channel = 1:n_channels
     end
 end
 
-if isscalar(atlas_bin_size) && atlas_bin_size == 1
-    % If bin size is 1 (binning turned off), just return full histology volume
-    ccf_bin_edges = NaN;
-    image_aligned_binmax = histology_volume;
+% Get max of histology volume in atlas bins
+if isscalar(atlas_bin_size) && atlas_bin_size ~= 1
+if isscalar(atlas_bin_size)
+    ccf_bin_edges = 1:atlas_bin_size:size(av,atlas_orientation);
 else
-    % If binning turned on: get max of histology volume in atlas bins
+    ccf_bin_edges = atlas_bin_size;
+end
 
-    if isscalar(atlas_bin_size)
-        ccf_bin_edges = 1:atlas_bin_size:size(av,atlas_orientation);
-    else
-        ccf_bin_edges = atlas_bin_size;
-    end
-
-    image_aligned_binmax = zeros([size(squeeze(max(av,[],atlas_orientation))),length(ccf_bin_edges)-1,n_channels]);
-    for curr_channel = 1:n_channels
-        for curr_atlas_bin = 1:length(ccf_bin_edges)-1
-            curr_ap = 1:size(tv,1);
-            curr_dv = 1:size(tv,2);
-            curr_ml = 1:size(tv,3);
-            switch atlas_orientation
-                case 1
-                    curr_ap = ccf_bin_edges(curr_atlas_bin):ccf_bin_edges(curr_atlas_bin+1);
-                case 2
-                    curr_dv = ccf_bin_edges(curr_atlas_bin):ccf_bin_edges(curr_atlas_bin+1);
-                case 3
-                    curr_ml = ccf_bin_edges(curr_atlas_bin):ccf_bin_edges(curr_atlas_bin+1);
-            end
-            image_aligned_binmax(:,:,curr_atlas_bin,curr_channel) = ...
-                squeeze(max(histology_volume(curr_ap,curr_dv,curr_ml,curr_channel), ....
-                [],atlas_orientation));
+image_aligned_binmax = zeros([size(squeeze(max(av,[],atlas_orientation))),length(ccf_bin_edges)-1,n_channels]);
+for curr_channel = 1:n_channels
+    for curr_atlas_bin = 1:length(ccf_bin_edges)-1
+        curr_ap = 1:size(tv,1);
+        curr_dv = 1:size(tv,2);
+        curr_ml = 1:size(tv,3);
+        switch atlas_orientation
+            case 1
+                curr_ap = ccf_bin_edges(curr_atlas_bin):ccf_bin_edges(curr_atlas_bin+1);
+            case 2
+                curr_dv = ccf_bin_edges(curr_atlas_bin):ccf_bin_edges(curr_atlas_bin+1);
+            case 3
+                curr_ml = ccf_bin_edges(curr_atlas_bin):ccf_bin_edges(curr_atlas_bin+1);
         end
+        image_aligned_binmax(:,:,curr_atlas_bin,curr_channel) = ...
+            squeeze(max(histology_volume(curr_ap,curr_dv,curr_ml,curr_channel), ....
+            [],atlas_orientation));
     end
+end
+elseif atlas_bin_size == 1
+
 end
 
 
