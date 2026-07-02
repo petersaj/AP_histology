@@ -1,23 +1,13 @@
-function [image_aligned_binmax,ccf_bin_edges] = bin_aligned_images(histology_path,atlas_orientation,atlas_bin_size)
-% bin_aligned_images(histology_path,atlas_orientation,atlas_bin_size)
+function histology_volume = histology_volume(histology_path)
+% histology_volume(histology_path,atlas_orientation,atlas_bin_size)
 %
-% Align histology images to CCF, get maximum within CCF bins
+% Align histology images to CCF and return volumentric histology
 %
 % INPUTS
 % histology_path - path to AP histology processing file
-% atlas_orientation - 1: AP, 2: DV, 3: ML (default = 1)
-% atlas_bin_size - scalar = size of CCF bin, vector = CCF bin edges to use
 %
 % OUTPUTS
-% image_aligned_binmax - pixels x pixels x bin x channel array of maximum
-% channel fluorescence within CCF bins
-% ccf_bin_edges - edges of CCF bins to generate max image
-
-arguments
-    histology_path = []
-    atlas_orientation = 1
-    atlas_bin_size = 100
-end
+% histology_volume - CCF volume (APxDVxML) x channel volume
 
 % Load atlas and processing file
 [av,tv] = ap_histology.load_ccf;
@@ -49,7 +39,7 @@ end
 
 % Build volume of histology images
 n_channels = max(cellfun(@(x) size(x,3),images));
-histology_volume = zeros([size(tv),n_channels],'single');
+histology_volume = NaN([size(tv),n_channels],'single');
 for curr_channel = 1:n_channels
     for curr_im_idx = 1:length(images)
 
@@ -85,43 +75,7 @@ for curr_channel = 1:n_channels
             round(slice_atlas_ccf(curr_im_idx).ml(:)), ...
             curr_channel);
 
-        histology_volume(curr_ccf_idx) = histology_volume(curr_ccf_idx) + ...
-            single(atlas_slice_aligned(:));
+        histology_volume(curr_ccf_idx) = sum(horzcat(histology_volume(curr_ccf_idx), ...
+            single(atlas_slice_aligned(:))),2,'omitnan');
     end
 end
-
-if isscalar(atlas_bin_size) && atlas_bin_size == 1
-    % If bin size is 1 (binning turned off), just return full histology volume
-    ccf_bin_edges = NaN;
-    image_aligned_binmax = histology_volume;
-else
-    % If binning turned on: get max of histology volume in atlas bins
-
-    if isscalar(atlas_bin_size)
-        ccf_bin_edges = 1:atlas_bin_size:size(av,atlas_orientation);
-    else
-        ccf_bin_edges = atlas_bin_size;
-    end
-
-    image_aligned_binmax = zeros([size(squeeze(max(av,[],atlas_orientation))),length(ccf_bin_edges)-1,n_channels]);
-    for curr_channel = 1:n_channels
-        for curr_atlas_bin = 1:length(ccf_bin_edges)-1
-            curr_ap = 1:size(tv,1);
-            curr_dv = 1:size(tv,2);
-            curr_ml = 1:size(tv,3);
-            switch atlas_orientation
-                case 1
-                    curr_ap = ccf_bin_edges(curr_atlas_bin):ccf_bin_edges(curr_atlas_bin+1);
-                case 2
-                    curr_dv = ccf_bin_edges(curr_atlas_bin):ccf_bin_edges(curr_atlas_bin+1);
-                case 3
-                    curr_ml = ccf_bin_edges(curr_atlas_bin):ccf_bin_edges(curr_atlas_bin+1);
-            end
-            image_aligned_binmax(:,:,curr_atlas_bin,curr_channel) = ...
-                squeeze(max(histology_volume(curr_ap,curr_dv,curr_ml,curr_channel), ....
-                [],atlas_orientation));
-        end
-    end
-end
-
-

@@ -1,11 +1,7 @@
 function AP_histology(image_path,channel_colors)
 % AP_histology(images,channel_colors)
 %
-% GUI for viewing and processing histology
-
-% TO DO:
-% - allow input arguments for image path and channel colors
-% - save clim?
+% GUI for viewing and processing mouse brain slice histology
 
 
 %% Create gui data structure
@@ -650,9 +646,10 @@ if atlas_view
         return
     end
 
-    % Get CCF area at mouse position
+    % Get CCF area name at mouse position, format as "area (acronym)"
     ccf_idx = gui_data.curr_atlas_slice(hover_y,hover_x);
-    area_name = gui_data.st(ccf_idx,:).name;
+    area_name = strrep(sprintf('%s (%s)',string(gui_data.st(ccf_idx,:).name), ...
+        string(gui_data.st(ccf_idx,:).acronym)),'"','');
 
     % Display area name
     set(gui_data.im_text,'Position', ...
