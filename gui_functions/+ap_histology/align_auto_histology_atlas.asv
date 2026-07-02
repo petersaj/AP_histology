@@ -9,7 +9,7 @@ end
 
 % User confirm
 if user_confirm_flag
-    user_confirm = questdlg('Clear existing alignments and auto-align?','Confirm','Yes','No','No');
+    user_confirm = questdlg('Clear any existing alignment and auto-align?','Confirm','Yes','No','No');
     if strcmpi(user_confirm,'no')
         return
     end
@@ -21,12 +21,8 @@ load(histology_guidata.histology_processing_filename);
 
 % Remove any existing alignments
 histology_ccf_fieldnames = fieldnames(AP_histology_processing.histology_ccf);
-histology_ccf_removefields = intersect(histology_ccf_fieldnames, ...
-    {'atlas2histology_tform','atlas2histology_size','control_points'});
 
-AP_histology_processing.histology_ccf = ...
-    rmfield(AP_histology_processing.histology_ccf, ...
-    histology_ccf_removefields);
+intersect(histology_ccf_fieldnames,{'atlas2histology_tform','atlas2histology_size','control_points'})
 
 % Update status
 histology_guidata.update([],[],histology_gui,'Auto-aligning atlas/histology slices...');
