@@ -408,9 +408,13 @@ set(gui_data.im_text, 'Position', ...
 gui_data.scrollbar_image.Value = gui_data.curr_slice;
 
 % Set axis limits to max across images
-max_lim = max(cell2mat(cellfun(@size,gui_data.data,'uni',false)),[],1);
-gui_data.im_h.Parent.XLim = [0,max_lim(2)]+0.5;
-gui_data.im_h.Parent.YLim = [0,max_lim(1)]+0.5;
+% (only if not zoomed in - slightly hacky, look for origin)
+if min(gui_data.im_h.Parent.XLim) == 0.5 && ...
+        min(gui_data.im_h.Parent.YLim) == 0.5
+    max_lim = max(cell2mat(cellfun(@size,gui_data.data,'uni',false)),[],1);
+    gui_data.im_h.Parent.XLim = [0,max_lim(2)]+0.5;
+    gui_data.im_h.Parent.YLim = [0,max_lim(1)]+0.5;
+end
 
 % Prioritze drawing this figure
 drawnow;
