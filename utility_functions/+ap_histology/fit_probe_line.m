@@ -1,12 +1,13 @@
-function probe_ccf_fit = fit_probe_line(AP_histology_processing_filename)
-% probe_line_fits = fit_probe_line(AP_histology_processing_filename)
+function probe_ccf_fit = fit_probe_line(AP_histology_processing_filename,annotation_idx)
+% probe_line_fits = fit_probe_line(AP_histology_processing_filename,annotation_idx)
 %
 % From AP_histology probe annotations: fit line to probe points, return CCF
 % coordinates for [insertion; tip approximation]
 %
 % INPUTS
 % AP_histology_processing_filename - processing filename from AP_histology
-% 
+% annotation_idx - (optional) annotation(s) to fit line for
+%
 % OUTPUTS
 % probe_insertion - structure with:
 %       .label - annotation label
@@ -15,13 +16,18 @@ function probe_ccf_fit = fit_probe_line(AP_histology_processing_filename)
 % Load histology processing
 load(AP_histology_processing_filename)
 
+% Set annotations to use (if not set)
+if nargin < 2 || isempty(annotation_idx)
+    annotation_idx = 1:length(AP_histology_processing.annotation);
+end
+
 % Get labels and vertices of all probes
-probe_labels = string({AP_histology_processing.annotation.label});
+probe_labels = string({AP_histology_processing.annotation(annotation_idx).label});
 probe_ccf_vertices = arrayfun(@(x) horzcat( ...
     vertcat(x.vertices_ccf.ap), ...
     vertcat(x.vertices_ccf.dv), ...
     vertcat(x.vertices_ccf.ml)), ...
-    AP_histology_processing.annotation,'uni',false);
+    AP_histology_processing.annotation(annotation_idx),'uni',false);
 
 % Loop through probes, find insertion point
 probe_fit_coordinates = cell(size(probe_ccf_vertices));
@@ -56,7 +62,7 @@ for curr_probe = 1:length(probe_ccf_vertices)
     probe_trajectory_av = av(eval_points_ccf_idx);
 
     % Get insertion point: where fit intersects brain
-    probe_insertion_ccf_fit = eval_points_ccf_valid(find(probe_trajectory_av>1,1),:);
+    probe_insertion_ccf_fit = eval_points_ccf_valid(find(probe_trajectory_av > 1,1),:);
 
     % Get deepest point (tip): where fit is closest to deepest labeled point
     [~,deepest_point_idx] = max(probe_ccf_vertices{curr_probe}(:,2));
