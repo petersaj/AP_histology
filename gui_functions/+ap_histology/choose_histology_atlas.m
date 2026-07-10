@@ -454,6 +454,10 @@ end
 opts.Default = 'Yes';
 opts.Interpreter = 'tex';
 user_confirm = questdlg('\fontsize{14} Save atlas slices?','Confirm exit',opts);
+
+% Close figure
+delete(gui_fig);
+
 switch user_confirm
     case 'Yes'     
         % Load processing and save CCF slice data
@@ -475,9 +479,6 @@ switch user_confirm
         return
 
 end 
-
-% Close figure
-delete(gui_fig);
 
 % Update histology GUI and load saved histology slices
 histology_guidata.update([],[],gui_data.histology_gui);
