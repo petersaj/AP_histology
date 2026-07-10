@@ -8,6 +8,12 @@ if isempty(allen_atlas_path)
     error('No CCF atlas found.\n 1) Download atlas files here: %s\n 2) Add folder with atlas files to MATLAB path', ...
         'https://osf.io/fv7ed/')
 end
+
+if ~exist('readNPY','file')
+    error('readNPY function to read atlas not found.\n 1) Clone npy-matlab repository: %s\n 2) Add repo to MATLAB path', ...
+        'https://github.com/kwikteam/npy-matlab')
+end
+
 tv = readNPY(fullfile(allen_atlas_path,'template_volume_10um.npy'));
 av = readNPY(fullfile(allen_atlas_path,'annotation_volume_10um_by_index.npy'));
 st = ap_histology.loadStructureTree(fullfile(allen_atlas_path,'structure_tree_safe_2017.csv'));
