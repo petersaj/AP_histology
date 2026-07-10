@@ -5,7 +5,8 @@ function [av,tv,st] = load_ccf
 
 allen_atlas_path = fileparts(which('template_volume_10um.npy'));
 if isempty(allen_atlas_path)
-    error('No CCF atlas found (add CCF atlas to path)')
+    error('No CCF atlas found.\n 1) Download atlas files here: %s\n 2) Add folder with atlas files to MATLAB path', ...
+        'https://osf.io/fv7ed/')
 end
 tv = readNPY(fullfile(allen_atlas_path,'template_volume_10um.npy'));
 av = readNPY(fullfile(allen_atlas_path,'annotation_volume_10um_by_index.npy'));
