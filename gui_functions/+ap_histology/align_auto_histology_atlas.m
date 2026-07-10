@@ -170,13 +170,11 @@ if user_confirm_flag
             histology_guidata.update([],[],histology_gui);
 
         case 'No'
-            % Close without saving
-            close(align_fig);
-
+            % Do nothing
     end
 end
 
-
+close(align_fig);
 
 
 

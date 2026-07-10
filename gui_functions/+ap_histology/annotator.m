@@ -4,6 +4,7 @@ function annotator(~,~,histology_gui)
 % Initialize gui data, add scroll image axis
 gui_data = struct;
 gui_data.histology_gui = histology_gui;
+histology_guidata = guidata(gui_data.histology_gui);
 
 % Create annotator figure
 fig_height = histology_gui.Position(4)/2;
@@ -17,7 +18,7 @@ gui_fig = uifigure('color','w','Name','Annotator', ...
 gui_grid = uigridlayout(gui_fig,[2,1]);
 
 % Add dropdown for labels
-gui_data.annotation_label = uidropdown(gui_grid,'Items',"No annotations",'ValueChangedFcn',{@select_annotation,gui_fig});
+gui_data.annotation_label = uidropdown(gui_grid,'ValueChangedFcn',{@select_annotation,gui_fig});
 gui_data.annotation_label.BackgroundColor = 'w';
 gui_data.annotation_label.FontSize = 14;
 
@@ -33,25 +34,58 @@ button_h(1+end) = uibutton(gui_grid,'text','Delete annotation entirely','ButtonP
 [button_h.FontSize] = deal(14);
 [button_h.BackgroundColor] = deal([0.9,0.9,1]);
 
-% Update gui data
-guidata(gui_fig,gui_data);
-
-% Ensure annotation view turned on, update image
-histology_guidata = guidata(gui_data.histology_gui);
-annotations_menu_idx = contains({histology_guidata.menu.view.Children.Text},'annotations','IgnoreCase',true);
-histology_guidata.menu.view.Children(annotations_menu_idx).Checked = 'on';
-histology_guidata.update([],[],gui_data.histology_gui);
-
 % Populate annotation menu with any extant annotations
 load(histology_guidata.histology_processing_filename);
 if isfield(AP_histology_processing,'annotation')
     annotation_labels = {AP_histology_processing.annotation.label};
 else
-    annotation_labels = {};
+    annotation_labels = {'<No annotations>'};
 end
-gui_data.annotation_label.Items = horzcat(string(annotation_labels),"New annotation");
+gui_data.annotation_label.Items = horzcat(string(annotation_labels),"New annotation...");
+
+% Update gui data
+guidata(gui_fig,gui_data);
+
+% Ensure annotation view turned on, update image
+annotations_menu_idx = contains({histology_guidata.menu.view.Children.Text},'annotations','IgnoreCase',true);
+histology_guidata.menu.view.Children(annotations_menu_idx).Checked = 'on';
+histology_guidata.update([],[],gui_data.histology_gui);
 
 end
+
+
+function select_annotation(currentObject, eventdata, gui_fig)
+
+% Get gui data
+gui_data = guidata(gui_fig);
+histology_guidata = guidata(gui_data.histology_gui);
+
+% Get currently selected annotation
+annotation_label = gui_data.annotation_label.Value;
+
+% New annotation
+if strcmp(annotation_label,'New annotation...')
+    % Query new label
+    new_annotation_label = inputdlg('New annotation label');
+    if ~isempty(new_annotation_label)
+        % Load processing
+        load(histology_guidata.histology_processing_filename);
+        % Add new label to list
+        if isfield(AP_histology_processing,'annotation')
+            annotation_labels = {AP_histology_processing.annotation.label};
+        else
+            annotation_labels = {};
+        end
+        gui_data.annotation_label.Items = horzcat(annotation_labels,new_annotation_label,{'New annotation...'});
+        % Select new label
+        gui_data.annotation_label.Value = new_annotation_label;
+        % Update gui data
+        guidata(gui_fig,gui_data);
+    end
+end
+
+end
+
 
 function draw_annotation(currentObject, eventdata, gui_fig, annotate_fcn)
 % Draw annotation with selected method
@@ -137,38 +171,6 @@ histology_guidata.update([],[],gui_data.histology_gui);
 
 end
 
-
-function select_annotation(currentObject, eventdata, gui_fig)
-
-% Get gui data
-gui_data = guidata(gui_fig);
-histology_guidata = guidata(gui_data.histology_gui);
-
-% Get currently selected annotation
-annotation_label = gui_data.annotation_label.Value;
-
-% New annotation
-if strcmp(annotation_label,'New annotation')
-    % Query new label
-    new_annotation_label = inputdlg('New annotation label');
-    if ~isempty(new_annotation_label)
-        % Load processing
-        load(histology_guidata.histology_processing_filename);
-        % Add new label to list
-        if isfield(AP_histology_processing,'annotation')
-            annotation_labels = {AP_histology_processing.annotation.label};
-        else
-            annotation_labels = {};
-        end
-        gui_data.annotation_label.Items = horzcat(annotation_labels,new_annotation_label,{'New annotation'});
-        % Select new label
-        gui_data.annotation_label.Value = new_annotation_label;
-        % Update gui data
-        guidata(gui_fig,gui_data);
-    end
-end
-
-end
 
 function delete_annotation_slice(currentObject, eventdata, gui_fig)
 % Delete verticies of selected annotation on slice
