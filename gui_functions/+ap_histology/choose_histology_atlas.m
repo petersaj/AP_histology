@@ -471,13 +471,8 @@ switch user_confirm
         % Auto-align slices
         ap_histology.align_auto_histology_atlas([],[],gui_data.histology_gui);
         
-    case 'No'
+    otherwise 'No'
         % Close without saving
-
-    case 'Cancel'
-        % Do nothing
-        return
-
 end 
 
 % Update histology GUI and load saved histology slices
