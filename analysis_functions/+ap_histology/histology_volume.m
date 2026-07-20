@@ -1,7 +1,7 @@
 function histology_volume = histology_volume(histology_path)
 % histology_volume(histology_path,atlas_orientation,atlas_bin_size)
 %
-% Align histology images to CCF and return volumentric histology
+% Align histology images to CCF and return volumetric histology
 %
 % INPUTS
 % histology_path - path to AP histology processing file
