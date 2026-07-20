@@ -21,8 +21,7 @@ histology_guidata.scrollbar_image.Enable = 'off';
 gui_position = histology_gui.Position;
 gui_fig = figure('Name','Atlas slice chooser', ...
     'WindowScrollWheelFcn',@scroll_atlas_slice, ...
-    'WindowKeyPressFcn',@keypress,'WindowKeyReleaseFcn',@keyrelease, ...
-    'Toolbar','none','Menubar','none','color','w', ...
+    'KeyPressFcn',@keypress,'Toolbar','none','Menubar','none','color','w', ...
     'Units','normalized','Position',gui_position, ...
     'CloseRequestFcn',@close_gui);
 
@@ -121,15 +120,14 @@ end
 end 
 
 function keypress(gui_fig,eventdata)
-% (TO DO? keep shift flag, turn remaining into buttons)
+% (this was all moved to buttons - only keeping test functions)
 
 % Get guidata
 gui_data = guidata(gui_fig);
 
 shift_on = any(strcmp(eventdata.Modifier,'shift'));
-
 % (set flag for shift on for atlas quick-scroll)
-gui_data.shift_pressed = shift_on;
+gui_data.shift_pressed = true;
 guidata(gui_fig, gui_data);
 
 switch eventdata.Key
@@ -220,16 +218,7 @@ switch eventdata.Key
         axis image off;
 
 end
-end
 
-function keyrelease(gui_fig,eventdata)
-% Get guidata
-gui_data = guidata(gui_fig);
-
-% (flag for shift release)
-shift_on = any(strcmp(eventdata.Modifier,'shift'));
-gui_data.shift_pressed = shift_on;
-guidata(gui_fig, gui_data);
 end
 
 function update_histology_slice(gui_fig)
@@ -279,14 +268,10 @@ gui_data = guidata(gui_fig);
 cam_vector = get_camera_vector(gui_data);
 
 % Move slice point
-% (one slice per scroll, 20 slice per scroll+shift)
-if ~isfield(gui_data,'shift_pressed')
-    gui_data.shift_pressed = false;
-end
-n_slices_move = max(1,gui_data.shift_pressed*20)*eventdata.VerticalScrollCount;
-
+slice_multiplier = gui_data.shift_pressed
+% (one slice per scroll, 10 slice per scroll+shift)
 gui_data.atlas_slice_point = gui_data.atlas_slice_point + ...
-    n_slices_move*cam_vector;
+    eventdata.VerticalScrollCount*cam_vector;
 
 % Upload gui data
 guidata(gui_fig, gui_data);
