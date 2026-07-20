@@ -172,14 +172,6 @@ end
 % Add image path to figure title
 set(gui_data.image_path_text,'String',gui_data.image_path);
 
-% Set save filename, create file if it doesn't exist
-gui_data.histology_processing_filename = fullfile(gui_data.image_path,'AP_histology_processing.mat');
-
-if ~exist(gui_data.histology_processing_filename,'file')
-    AP_histology_processing = struct;
-    save(gui_data.histology_processing_filename,'AP_histology_processing');
-end
-
 % Load images
 image_dir = dir(fullfile(gui_data.image_path,'*.tif*'));
 image_filenames = cellfun(@(path,name) fullfile(path,name), ...
@@ -259,6 +251,13 @@ set(gui_data.scrollbar_black, ...
 gui_data.data = images;
 gui_data.curr_slice = 1;
 gui_data.curr_im_idx = 1;
+
+% Set save filename, create file if it doesn't exist
+gui_data.histology_processing_filename = fullfile(gui_data.image_path,'AP_histology_processing.mat');
+if ~exist(gui_data.histology_processing_filename,'file')
+    AP_histology_processing = struct;
+    save(gui_data.histology_processing_filename,'AP_histology_processing');
+end
 
 % Update guidata
 guidata(gui_fig,gui_data);
