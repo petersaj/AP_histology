@@ -20,7 +20,7 @@ end
 % Load processing
 load(histology_processing_filename)
 
-% Set annotations to use (if not set)
+% Use all annotations if not set
 if isempty(annotations)
     if isfield(AP_histology_processing,'annotation') && ...
             ~isempty(AP_histology_processing.annotation)
@@ -28,6 +28,11 @@ if isempty(annotations)
     else
         return
     end
+end
+
+% Use all slices if not set
+if isempty(slices)
+    slices = 1:size(AP_histology_processing.histology_ccf.slice_points,1);
 end
 
 % Grab atlas images (if not provided)
@@ -46,12 +51,6 @@ end
 
 % Loop through annotations>images, transform histology coords to CCF
 for curr_annotation = reshape(annotations,1,[])
-
-    % Set slices to use (if not set)
-    if isempty(slices)
-        find(~cellfun(@isempty,AP_histology_processing.annotation(curr_annotation).vertices_histology));
-    end
-
     for curr_slice = reshape(slices,1,[])
 
         curr_vertices = AP_histology_processing.annotation(curr_annotation).vertices_histology{curr_slice};

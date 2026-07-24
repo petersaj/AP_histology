@@ -30,29 +30,34 @@ if isempty(annotations)
     end
 end
 
-% Grab atlas images (if not provided
-[av,tv,gui_data.st] = ap_histology.load_ccf;
-n_slices = length(AP_histology_processing.histology_ccf.atlas2histology_size);
-slice_atlas = struct('tv',cell(n_slices,1), 'av',cell(n_slices,1));
-slice_atlas_ccf = struct('ap',cell(n_slices,1),'ml',cell(n_slices,1),'dv',cell(n_slices,1));
-for curr_slice = 1:n_slices
-    [slice_atlas(curr_slice),slice_atlas_ccf(curr_slice)] = ...
-        ap_histology.grab_atlas_slice(av,tv, ...
-        AP_histology_processing.histology_ccf.slice_vector, ...
-        AP_histology_processing.histology_ccf.slice_points(curr_slice,:), 1);
+% Grab atlas images (if not provided)
+if isempty(slice_atlas_ccf)
+    [av,tv,gui_data.st] = ap_histology.load_ccf;
+    n_slices = length(AP_histology_processing.histology_ccf.atlas2histology_size);
+    slice_atlas = struct('tv',cell(n_slices,1), 'av',cell(n_slices,1));
+    slice_atlas_ccf = struct('ap',cell(n_slices,1),'ml',cell(n_slices,1),'dv',cell(n_slices,1));
+    for curr_slice = 1:n_slices
+        [slice_atlas(curr_slice),slice_atlas_ccf(curr_slice)] = ...
+            ap_histology.grab_atlas_slice(av,tv, ...
+            AP_histology_processing.histology_ccf.slice_vector, ...
+            AP_histology_processing.histology_ccf.slice_points(curr_slice,:), 1);
+    end
 end
 
 % Loop through annotations>images, transform histology coords to CCF
 for curr_annotation = reshape(annotations,1,[])
 
-    % Set slices to use (if not set)
+    % Use all slice if not set
     if isempty(slices)
         find(~cellfun(@isempty,AP_histology_processing.annotation(curr_annotation).vertices_histology));
     end
 
     for curr_slice = reshape(slices,1,[])
 
-        curr_vertices = AP_histology_processing.annotation(curr_annotation).vertices_histology{curr_slice};   
+        curr_vertices = AP_histology_processing.annotation(curr_annotation).vertices_histology{curr_slice};
+        if isempty(curr_vertices)
+            continue
+        end
 
         % Get transform from slice to atlas
         % (manual if >3 paired control points, automatic otherwise)
