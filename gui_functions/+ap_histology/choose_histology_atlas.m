@@ -478,6 +478,9 @@ user_confirm = questdlg('\fontsize{14} Save atlas slices?','Confirm exit',opts);
 % Close figure
 delete(gui_fig);
 
+% Re-enable image scrolling in histology gui
+histology_guidata.scrollbar_image.Enable = 'on';
+
 switch user_confirm
     case 'Yes'     
         % Load processing and save CCF slice data
@@ -491,14 +494,12 @@ switch user_confirm
         % Auto-align slices
         ap_histology.align_auto_histology_atlas([],[],gui_data.histology_gui);
         
-    otherwise 'No'
+    otherwise
         % Close without saving
 end 
 
 % Update histology GUI and load saved histology slices
 histology_guidata.update([],[],gui_data.histology_gui);
 
-% Re-enable image scrolling in histology gui
-histology_guidata.scrollbar_image.Enable = 'on';
 
 end

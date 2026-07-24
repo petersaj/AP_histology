@@ -138,10 +138,16 @@ save(histology_guidata.histology_processing_filename,'AP_histology_processing');
 guidata(align_gui,align_guidata);
 update_atlas_slice(align_gui,histology_gui);
 
-% Update histology image if >=3 pairs of points
+% Update alignment if >=3 pairs of points
 if size(AP_histology_processing.histology_ccf.control_points.histology{curr_im_idx},1) == ...
         size(AP_histology_processing.histology_ccf.control_points.atlas{curr_im_idx},1) & ...
         size(AP_histology_processing.histology_ccf.control_points.histology{curr_im_idx},1) >= 3
+
+    % Convert updated vertices to CCF
+    ap_histology.annotation2ccf(histology_guidata.histology_processing_filename, ...
+        histology_guidata.atlas_slice_coords,[],curr_im_idx);
+
+    % Update GUI image
     histology_guidata.update([],[],histology_gui,'Click align points');
 end
 

@@ -83,20 +83,22 @@ for curr_slice = 1:length(slice_histology)
     optimizer.GrowthFactor = 1+1e-3;
     optimizer.InitialRadius = 1e-3;
 
-%     % To align outlines:
-%     curr_histology_slice = +slice_histology_binary{curr_slice};
-%     curr_atlas_slice = +(histology_ccf(curr_slice).av_slices > 1);
-%     [optimizer, metric] = imregconfig('monomodal');
-%     optimizer.MaximumIterations = 200;
-%     optimizer.MaximumStepLength = 1e-2;
-%     optimizer.GradientMagnitudeTolerance = 1e-5;
-%     optimizer.RelaxationFactor = 1e-1;
+    % % To align outlines:
+    % curr_histology_slice = +slice_histology_binary{curr_slice};
+    % curr_atlas_slice = +(slice_atlas(curr_slice).av > 1);
+    % [optimizer, metric] = imregconfig('monomodal');
+    % optimizer.MaximumIterations = 200;
+    % optimizer.MaximumStepLength = 1e-2;
+    % optimizer.GradientMagnitudeTolerance = 1e-5;
+    % optimizer.RelaxationFactor = 1e-1;
 
     % Resize atlas outline to approximately match histology, affine-align
     resize_factor = min(size(curr_histology_slice)./size(curr_atlas_slice));
     curr_atlas_slice_resize = imresize(curr_atlas_slice,resize_factor,'nearest');
 
-    % Do alignment on downsampled images (faster and more accurate)
+    % Do alignment on downsampled images
+    % (this makes a big difference - faster and more accurate, but should
+    % really depend on the resolution of the image)
     downsample_factor = 10;
 
     tformEstimate_affine_resized = ...
@@ -152,6 +154,7 @@ if user_confirm_flag
     opts.Default = 'Yes';
     opts.Interpreter = 'tex';
     user_confirm = questdlg('\fontsize{14} Save alignments?','Confirm exit','Yes','No',opts);
+    close(align_fig);
     switch user_confirm
         
         case 'Yes'
@@ -162,6 +165,10 @@ if user_confirm_flag
             % Save
             save(histology_guidata.histology_processing_filename,'AP_histology_processing');
             disp('Saved alignments');
+
+            % Re-convert any existing annotations 
+            histology_guidata.update([],[],histology_gui,'Converting annotations to CCF...')
+            ap_histology.annotation2ccf(histology_guidata.histology_processing_filename)
 
             % Load atlas slices into histology GUI
             histology_guidata.load_atlas_slices([],[],histology_gui)
@@ -175,8 +182,6 @@ if user_confirm_flag
             % Do nothing
     end
 end
-
-close(align_fig);
 
 
 
