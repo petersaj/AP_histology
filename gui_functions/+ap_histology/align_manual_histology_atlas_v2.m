@@ -220,6 +220,9 @@ histology_guidata = guidata(histology_gui);
 delete(align_gui);
 delete(align_guidata.histology_control_points_plot);
 
+% Clear GUI click function
+histology_guidata.im_h.ButtonDownFcn = {};
+
 % Re-enable image scrolling in histology gui
 histology_guidata.scrollbar_image.Enable = 'on';
 
