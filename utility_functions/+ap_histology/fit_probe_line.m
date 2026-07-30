@@ -29,13 +29,13 @@ probe_ccf_vertices = arrayfun(@(x) horzcat( ...
     vertcat(x.vertices_ccf.ml)), ...
     AP_histology_processing.annotation(annotation_idx),'uni',false);
 
+% Load CCF atlas
+[av,~,~] = ap_histology.load_ccf;
+
 % Loop through probes, find insertion point
 probe_fit_coordinates = cell(size(probe_ccf_vertices));
 for curr_probe = 1:length(probe_ccf_vertices)
-
-    % Load CCF atlas
-    [av,~,~] = ap_histology.load_ccf;
-
+   
     % Get line of best fit through mean of marked points
     [~,~,probe_fit] = svd(probe_ccf_vertices{curr_probe} - mean(probe_ccf_vertices{curr_probe},1),0);
     probe_direction = probe_fit(:,1);
