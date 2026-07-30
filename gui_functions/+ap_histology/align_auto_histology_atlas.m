@@ -97,9 +97,8 @@ for curr_slice = 1:length(slice_histology)
     curr_atlas_slice_resize = imresize(curr_atlas_slice,resize_factor,'nearest');
 
     % Do alignment on downsampled images
-    % (this makes a big difference - faster and more accurate, but should
-    % really depend on the resolution of the image)
-    downsample_factor = 10;
+    % (faster and more accurate - downsize max dim to ~300px, arbitrary)
+    downsample_factor = round(max(size(curr_histology_slice))/300);
 
     tformEstimate_affine_resized = ...
         imregtform( ...

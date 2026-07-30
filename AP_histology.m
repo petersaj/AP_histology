@@ -203,7 +203,7 @@ image_metadata = ap_histology.read_image_metadata(image_filenames{1});
 if isempty(image_metadata)
     % Default channel colors
     default_colors = ...
-        [1,0,0;0,1,0;0,0,1; ... % RGB
+        [0,1,0;1,0,0;0,0,1; ... % GRB
         0,1,1;1,0,1;1,1,0];     % CYM
     if n_channels > 6
         default_colors = hsv(n_channels);
