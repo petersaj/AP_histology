@@ -26,63 +26,6 @@ gui_fig = figure('Name','Atlas slice chooser', ...
     'Units','normalized','Position',gui_position, ...
     'CloseRequestFcn',@close_gui);
 
-%%%%%%%%%% UNDER CONSTRUCTION
-% re-formatting as uifig
-
-
-gui_fig = figure('Name','Atlas slice chooser', ...
-    'WindowScrollWheelFcn',@scroll_atlas_slice, ...
-    'WindowKeyPressFcn',@keypress,'WindowKeyReleaseFcn',@keyrelease, ...
-    'Toolbar','none','Menubar','none','color','w', ...
-    'Units','normalized','Position',gui_position, ...
-    'CloseRequestFcn',@close_gui,'HandleVisibility','on');
-
-gui_grid = uigridlayout(gui_fig,[4,1], ...
-    'RowHeight',{'1x','5x','1x','1x'});
-
-tilt_panel = uipanel(gui_grid,'Title','Tilt atlas');
-atlas_ax = uiaxes(gui_grid,'Interactions',[]);
-slice_panel = uipanel(gui_grid,'Title','Choose histology slice');
-actions_panel = uipanel(gui_grid,'Title','Actions');
-
-% Add tilt buttons
-tilt_panel_grid = uigridlayout(tilt_panel,[1,4]);
-button_strings = {'Left','Right','Up','Down'};
-for curr_button = 1:length(button_strings)
-    gui_data.tilt_button(curr_button) = ...
-        uibutton(tilt_panel_grid, ...
-        'Text',button_strings{curr_button}, ...
-        'ButtonPushedFcn',{@tilt_atlas,gui_fig,curr_button});
-end
-
-% Add histology slice buttons
-button_strings = {'Previous histology slice','Next histology slice'};
-button_functions = {@previous_slice,@next_slice};
-slice_panel_grid = uigridlayout(slice_panel,[1,length(button_strings)]);
-for curr_button = 1:length(button_strings)
-    uibutton(slice_panel_grid, ...
-        'Text',button_strings{curr_button}, ...
-        'ButtonPushedFcn',{button_functions{curr_button},gui_fig});
-end
-
-% Add action buttons
-button_strings = {'Set slice','Interpolate','Atlas mode','Quick Align','Clear slice'};
-button_functions = {@previous_slice,@next_slice,@set_slice,@interpolate_slice,@atlas_mode};
-actions_panel_grid = uigridlayout(actions_panel,[1,length(button_strings)]);
-for curr_button = 1:length(button_strings)
-    uibutton(actions_panel_grid, ...
-        'Text',button_strings{curr_button}, ...
-        'ButtonPushedFcn',{button_functions{curr_button},gui_fig});
-end
-
-
-%%%%%%%%%%%%%%%%%%
-
-
-
-
-
-
 % Set up 3D atlas axis
 gui_data.atlas_ax = axes(gui_fig,'units','normalized','position',[0,0,1,1], ...
     'ZDir','reverse','color','k', ...
