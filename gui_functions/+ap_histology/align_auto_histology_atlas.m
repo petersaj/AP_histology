@@ -146,7 +146,7 @@ clim(atlas_ax,[1,size(ccf_cmap,1)]);
 atlas_montage.AlphaData = 0.2;
 
 linkaxes([im_ax,atlas_ax]);
-title(atlas_ax,'Histology/atlas alignment overlay');
+title(atlas_ax,'Auto-alignment results');
 
 % Prompt for save
 if user_confirm_flag
