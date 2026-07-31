@@ -197,23 +197,47 @@ switch eventdata.Key
         curr_atlas_slice_warp(curr_atlas_slice_warp == 1) = 0;
        
         % Plot overlay and mask
-        figure('color','w'); 
-        h = tiledlayout(1,2,'TileSpacing','none');
+        figure; tiledlayout(1,2);
+        nexttile; 
+        imagesc(ax_1,curr_histology_slice);
+        colormap(ax_1,'gray');
+        axis image off;
+        ax_2 = subplot(1,2,2);
+        im_h = imagesc(ax_2,curr_atlas_slice_warp);
+        im_h.AlphaData = 0.2;
+        colormap(ax_2,'hot');
+        axis image off;
+        ax_2.Color = 'none';
+        ax_2.Position = ax_1.Position;
+        linkaxes([ax_1,ax_2]);
+        
+        %%%%%%%%%%%% UNDER CONSTRUCTION
 
-        histology_ax1 = nexttile(h);
-        imagesc(histology_ax1,curr_histology_slice);
-        colormap(histology_ax1,'gray'); axis image off;
+        figure; h = tiledlayout(1,2,'TileSpacing','none');
 
-        atlas_ax = nexttile(h); atlas_ax.Layout.Tile = 1;
-        imagesc(atlas_ax,curr_atlas_slice_warp,'AlphaData',0.2);
-        linkaxes([histology_ax1,atlas_ax],'xy');
+        ax_1 = nexttile;
+        imagesc(ax_1,curr_histology_slice);
+        colormap(ax_1,'gray'); axis image off;
 
-        ccf_cmap = hex2rgb("#"+string(gui_data.st.color_hex_triplet));
+        ax_2 = nexttile; ax_2.Layout.Tile = 1;
+        im_h = imagesc(ax_2,curr_atlas_slice_warp);
+        im_h.AlphaData = 0.2;
+
+        ccf_cmap = cell2mat(cellfun(@(x) hex2dec(mat2cell(x,1,[2,2,2]))'./255,gui_data.st.color_hex_triplet,'uni',false));
+
+        "#"+string(gui_data.st.color_hex_triplet)
         colormap(atlas_ax,ccf_cmap);
         clim(atlas_ax,[1,size(ccf_cmap,1)]);
-        axis image off;
 
-        nexttile(h);
+        colormap(ax_2,'hot');
+
+
+
+
+        %%%%%%%%%
+
+        
+        subplot(1,2,2);
         curr_atlas_slice_warp_mask = imdilate(boundarymask(curr_atlas_slice_warp),ones(3));
         curr_overlay = imoverlay(double(curr_histology_slice)./ ...
             double(max(curr_histology_slice,[],'all')), ...
