@@ -139,7 +139,7 @@ colormap(im_ax,'gray');
 atlas_ax = axes(align_fig,'units','normalized','position',[0,0,1,1]);
 atlas_montage = montage(av_aligned);
 
-ccf_cmap = cell2mat(cellfun(@(x) hex2dec(mat2cell(x,1,[2,2,2]))'./255,st.color_hex_triplet,'uni',false));
+ccf_cmap = hex2rgb("#"+string(st.color_hex_triplet));
 colormap(atlas_ax,ccf_cmap);
 clim(atlas_ax,[1,size(ccf_cmap,1)]);
 
