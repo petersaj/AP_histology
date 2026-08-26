@@ -94,10 +94,12 @@ function draw_annotation(currentObject, eventdata, gui_fig, annotate_fcn)
 gui_data = guidata(gui_fig);
 histology_guidata = guidata(gui_data.histology_gui);
 
-% Draw annotation segment line (or if no label, do nothing)
+% Draw annotation segment line
 annotation_label = gui_data.annotation_label.Value;
-if isempty(annotation_label)
-    histology_guidata.update([],[],gui_data.histology_gui,'Cannot annotate without label')
+if isempty(annotation_label) || ...
+        any(strcmp(annotation_label,{'<No annotations>','New annotation...'}))
+    % If no label or reserved label, do nothing and warn user
+    uialert(gui_fig,'No annotation label entered','Enter label');
     return
 else
     histology_guidata.update([],[],gui_data.histology_gui,sprintf('Draw annotation: %s',annotation_label))
@@ -152,11 +154,17 @@ function delete_annotation_slice(currentObject, eventdata, gui_fig)
 gui_data = guidata(gui_fig);
 histology_guidata = guidata(gui_data.histology_gui);
 
+annotation_label = gui_data.annotation_label.Value;
+
+% (Do nothing on reserved labels)
+if any(strcmp(annotation_label,{'<No annotations>','New annotation...'}))
+    return
+end
+
 % Load processing
 load(histology_guidata.histology_processing_filename);
 
 % Delete any selected annotations on slice
-annotation_label = gui_data.annotation_label.Value;
 annotation_idx = find(strcmp(annotation_label,{AP_histology_processing.annotation.label}));
 
 AP_histology_processing.annotation(annotation_idx).vertices_histology{histology_guidata.curr_im_idx} = [];
@@ -181,19 +189,32 @@ histology_guidata = guidata(gui_data.histology_gui);
 % Get currently selected annotation
 annotation_label = gui_data.annotation_label.Value;
 
+% (Do nothing on reserved labels)
+if any(strcmp(annotation_label,{'<No annotations>','New annotation...'}))
+    return
+end
+
 % Confirm with user
 user_confirm = ...
     uiconfirm(gui_fig,sprintf('Delete annotation: ''%s''?',annotation_label), ...
     "Confirm delete annotation",'Icon','warning');
 
 if strcmp(user_confirm,'OK')
-    % Remove annotation from list
-    gui_data.annotation_label.Items = setdiff(gui_data.annotation_label.Items,annotation_label);
 
     % Remove annotation from saved histology file
     load(histology_guidata.histology_processing_filename);
     annotation_idx = find(strcmp(annotation_label,{AP_histology_processing.annotation.label}));
     AP_histology_processing.annotation(annotation_idx) = [];
+
+    if ~isempty(AP_histology_processing.annotation)
+        % If annotations left, remove from list
+        gui_data.annotation_label.Items = setdiff(gui_data.annotation_label.Items,annotation_label);
+    else
+        % If no annotations left, remove field
+        AP_histology_processing = rmfield(AP_histology_processing,'annotation');
+        gui_data.annotation_label.Items = ["<No annotations>","New annotation..."];
+    end
+
     save(histology_guidata.histology_processing_filename, 'AP_histology_processing');
 
     % Update histology image
