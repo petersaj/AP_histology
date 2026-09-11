@@ -148,40 +148,37 @@ atlas_montage.AlphaData = 0.2;
 linkaxes([im_ax,atlas_ax]);
 title(atlas_ax,'Auto-alignment results');
 
-% Prompt for save
+% Prompt for save if user confirm
 if user_confirm_flag
     opts.Default = 'Yes';
     opts.Interpreter = 'tex';
     user_confirm = questdlg('\fontsize{14} Save alignments?','Confirm exit','Yes','No',opts);
     close(align_fig);
-    switch user_confirm
-        
-        case 'Yes'
-            % Package
-            AP_histology_processing.histology_ccf.atlas2histology_tform = atlas2histology_tform;
-            AP_histology_processing.histology_ccf.atlas2histology_size = atlas2histology_size;
-
-            % Save
-            save(histology_guidata.histology_processing_filename,'AP_histology_processing');
-            disp('Saved alignments');
-
-            % Re-convert any existing annotations 
-            histology_guidata.update([],[],histology_gui,'Converting annotations to CCF...')
-            ap_histology.annotation2ccf(histology_guidata.histology_processing_filename)
-
-            % Load atlas slices into histology GUI
-            histology_guidata.load_atlas_slices([],[],histology_gui)
-
-            % Turn on atlas view
-            view_aligned_atlas_menu_idx = contains({histology_guidata.menu.view.Children.Text},'atlas','IgnoreCase',true);
-            histology_guidata.menu.view.Children(view_aligned_atlas_menu_idx).Checked = true;
-            histology_guidata.update([],[],histology_gui);
-
-        case 'No'
-            % Do nothing
+    if strcmpi(user_confirm,'no')
+        % If user selects no, don't save
+        return
     end
 end
 
+% Package
+AP_histology_processing.histology_ccf.atlas2histology_tform = atlas2histology_tform;
+AP_histology_processing.histology_ccf.atlas2histology_size = atlas2histology_size;
+
+% Save
+save(histology_guidata.histology_processing_filename,'AP_histology_processing');
+disp('Saved alignments');
+
+% Re-convert any existing annotations
+histology_guidata.update([],[],histology_gui,'Converting annotations to CCF...')
+ap_histology.annotation2ccf(histology_guidata.histology_processing_filename)
+
+% Load atlas slices into histology GUI
+histology_guidata.load_atlas_slices([],[],histology_gui)
+
+% Turn on atlas view
+view_aligned_atlas_menu_idx = contains({histology_guidata.menu.view.Children.Text},'atlas','IgnoreCase',true);
+histology_guidata.menu.view.Children(view_aligned_atlas_menu_idx).Checked = true;
+histology_guidata.update([],[],histology_gui);
 
 
 
