@@ -19,7 +19,7 @@ save_path = fullfile(fileparts(histology_guidata.histology_processing_filename),
 % Fit line through probe points, return [insertion;tip]
 probe_line_fits = ap_histology.fit_probe_line(histology_guidata.histology_processing_filename);
 
-% Convert conventions: CCF [AP,DV,ML, 10um] to IBL [ML,AP,DV, 1um]
+% Convert conventions: CCF [AP,DV,ML: 10um] to IBL [ML,AP,DV: 1um]
 ibl_bregma_ccf = [540, 44, 570];
 probe_line_fits_ibl = cellfun(@(x) ...
     (x(:,[1,3,2])-ibl_bregma_ccf([3,1,2]))*10, ...
