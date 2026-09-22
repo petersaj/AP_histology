@@ -17,6 +17,10 @@ histology_guidata.scrollbar_image.Enable = 'off';
 % Load atlas
 [gui_data.av,gui_data.tv,gui_data.st] = ap_histology.load_ccf;
 
+% CCF coordinate parameters
+gui_data.ccf_resolution_mm = 0.01;  % 10 um per voxel
+gui_data.bregma_ap_voxel = 540;     % approximate CCF bregma AP coordinate
+
 % ~~ Set up figure
 gui_position = histology_gui.Position;
 gui_fig = uifigure('Name','Atlas slice chooser', ...
@@ -25,8 +29,17 @@ gui_fig = uifigure('Name','Atlas slice chooser', ...
     'Units','normalized','Position',gui_position, ...
     'CloseRequestFcn',@close_gui,'HandleVisibility','on');
 
-gui_grid = uigridlayout(gui_fig,[4,1], ...
-    'RowHeight',{'1x','5x','1x','1x'},'BackgroundColor','w');
+% gui_grid = uigridlayout(gui_fig,[4,1], ...
+%     'RowHeight',{'1x','5x','1x','1x'},'BackgroundColor','w');
+gui_grid = uigridlayout(gui_fig,[5,1], ...
+    'RowHeight',{'0.6x','1x','5x','1x','1x'}, ...
+    'BackgroundColor','w');
+
+gui_data.ap_label = uilabel(gui_grid, ...
+    'Text','Atlas AP: -- mm from bregma', ...
+    'FontSize',14, ...
+    'FontWeight','bold', ...
+    'HorizontalAlignment','center');
 
 tilt_panel = uipanel(gui_grid,'Title','Tilt atlas');
 gui_data.atlas_ax = uiaxes(gui_grid,'Interactions',[]);
@@ -224,6 +237,14 @@ function update_atlas_slice(gui_fig)
 
 % Get guidata
 gui_data = guidata(gui_fig);
+
+% Display AP coordinate of the center of the current atlas slice
+% CCF bregma is approximately AP voxel 540.
+atlas_ap_mm = ...
+    (gui_data.bregma_ap_voxel - gui_data.atlas_slice_point(1)) * ...
+    gui_data.ccf_resolution_mm;
+
+gui_data.ap_label.Text = sprintf('Atlas AP: %+.2f mm from bregma',atlas_ap_mm);
 
 % Get slice (larger spacing for faster pulling)
 atlas_spacing = 3;
