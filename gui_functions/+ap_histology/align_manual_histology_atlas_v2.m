@@ -47,6 +47,35 @@ for curr_button = 1:length(button_strings)
         'Callback',{button_functions{curr_button},align_gui,histology_gui});
 end
 
+% Atlas transparency slider
+align_guidata.atlas_alpha = 0.35;
+
+uicontrol(align_gui, ...
+    'Style','text', ...
+    'Units','normalized', ...
+    'Position',[0.02,0.93,0.22,0.04], ...
+    'String','Atlas transparency', ...
+    'BackgroundColor','w', ...
+    'HorizontalAlignment','left');
+
+align_guidata.atlas_alpha_slider = uicontrol(align_gui, ...
+    'Style','slider', ...
+    'Units','normalized', ...
+    'Position',[0.24,0.93,0.55,0.04], ...
+    'Min',0, ...
+    'Max',1, ...
+    'Value',align_guidata.atlas_alpha, ...
+    'SliderStep',[0.01,0.1], ...
+    'Callback',{@atlas_transparency_listener,align_gui,histology_gui});
+
+align_guidata.atlas_alpha_label = uicontrol(align_gui, ...
+    'Style','text', ...
+    'Units','normalized', ...
+    'Position',[0.81,0.93,0.15,0.04], ...
+    'String',sprintf('%d%%',round(100*align_guidata.atlas_alpha)), ...
+    'BackgroundColor','w', ...
+    'HorizontalAlignment','left');
+
 % Draw atlas slice
 atlas_ax = axes(align_gui,'YDir','reverse'); 
 hold on; axis image off; colormap(gray); clim([0,400]);
@@ -72,6 +101,10 @@ align_guidata.im_h.ButtonDownFcn = {@mouseclick_align,align_gui,histology_gui};
 % Set align gui data
 guidata(align_gui,align_guidata);
 
+% Store atlas transparency in the histology GUI data
+histology_guidata.atlas_alpha = align_guidata.atlas_alpha;
+guidata(histology_gui,histology_guidata);
+
 % Set the first slice in both GUIs
 histology_guidata.curr_slice = 1;
 guidata(histology_gui,histology_guidata);
@@ -79,6 +112,33 @@ histology_guidata.update([],[],histology_gui,'Click align points');
 
 update_atlas_slice(align_gui,histology_gui);
 
+
+end
+
+
+function atlas_transparency_listener(currentObject,eventdata,align_gui,histology_gui)
+
+% Get GUI data
+align_guidata = guidata(align_gui);
+histology_guidata = guidata(histology_gui);
+
+% Read slider value
+new_alpha = currentObject.Value;
+
+% Store transparency in both GUIs
+align_guidata.atlas_alpha = new_alpha;
+histology_guidata.atlas_alpha = new_alpha;
+
+% Update percentage label
+align_guidata.atlas_alpha_label.String = ...
+    sprintf('%d%%',round(100*new_alpha));
+
+% Upload GUI data
+guidata(align_gui,align_guidata);
+guidata(histology_gui,histology_guidata);
+
+% Redraw histology image with new atlas transparency
+histology_guidata.update([],[],histology_gui,'Click align points');
 
 end
 
@@ -223,7 +283,15 @@ delete(align_guidata.histology_control_points_plot);
 % Clear GUI click function
 histology_guidata.im_h.ButtonDownFcn = {};
 
+% Remove temporary atlas transparency setting
+if isfield(histology_guidata,'atlas_alpha')
+    histology_guidata = rmfield(histology_guidata,'atlas_alpha');
+end
+
 % Re-enable image scrolling in histology gui
 histology_guidata.scrollbar_image.Enable = 'on';
+
+% Upload updated histology GUI data
+guidata(histology_gui,histology_guidata);
 
 end
