@@ -350,8 +350,26 @@ if atlas_view && isfield(gui_data,'atlas_slices')
     % Store aligned atlas slice for quick referencing on hover
     gui_data.curr_atlas_slice = atlas_slice_aligned;
 
+    % ccf_borders = imdilate(boundarymask(atlas_slice_aligned),ones(overlay_dilation));
+    % im_display = imoverlay(im_display,ccf_borders,'w');
     ccf_borders = imdilate(boundarymask(atlas_slice_aligned),ones(overlay_dilation));
-    im_display = imoverlay(im_display,ccf_borders,'w');
+    
+    % Atlas overlay transparency
+    if isfield(gui_data,'atlas_alpha')
+        atlas_alpha = gui_data.atlas_alpha;
+    else
+        atlas_alpha = 1;
+    end
+    
+    % Blend white atlas borders into the histology image
+    for curr_channel = 1:size(im_display,3)
+        curr_image = im_display(:,:,curr_channel);
+    
+        curr_image(ccf_borders) = ...
+            (1-atlas_alpha).*curr_image(ccf_borders) + atlas_alpha;
+    
+        im_display(:,:,curr_channel) = curr_image;
+    end
 
 end
 
