@@ -78,9 +78,8 @@ uimenu(gui_data.menu.export,'Text','Vector images','Enable','off', ...
 uimenu(gui_data.menu.export,'Text','IBL probe coordinates','Enable','off', ...
     'MenuSelectedFcn',{@ap_histology.export_ibl_probe,gui_fig});
 
-%%%% 
+%%%% Scrollbars
 
-% Set up scrollbars
 scrollbar_height = 0.02;
 scrollbar_label_width = 0.1;
 
@@ -128,8 +127,9 @@ uicontrol('style','text','units','normalized', ...
     'String','Image path:')
 
 % Draw image, set hover function (for CCF)
-im_ax = axes('Units','normalized','Position',[0,4*scrollbar_height,1,1-4*scrollbar_height],'color',[0.5,0.5,0.5]);
+im_ax = axes('Units','normalized','Position',[0,5*scrollbar_height,1,1-5*scrollbar_height],'color',[0.5,0.5,0.5]);
 gui_data.im_h = imagesc(im_ax,NaN);
+hold(im_ax,'on');
 axis image off;
 gui_fig.WindowButtonMotionFcn = {@hover_label,gui_fig};
 
@@ -138,6 +138,10 @@ gui_data.im_text = text( ...
     interp1([0,1],gui_data.im_h.Parent.XLim,0.05), ...
     interp1([0,1],gui_data.im_h.Parent.YLim,0.05), ...
     '','color','w','BackgroundColor','k','FontSize',14,'Interpreter','none');
+
+% Set oerlay properties
+gui_data.overlay.transparency = 0;
+gui_data.overlay.legend_dummy = xline(im_ax,nan,'linewidth',3);
 
 % Save function handles for external calling
 gui_data.update = @update_image;
@@ -321,7 +325,7 @@ im_display = ap_histology.rigid_transform(im_rgb,curr_im_idx,AP_histology_proces
 
 %%% Add overlays
 
-% (dilate the overlays depending on image size)
+% Set overlay dilation based on image size
 overlay_dilation = ceil(max(size(im_rescaled,[1,2]))/1000);
 
 % Atlas boundaries 
@@ -351,8 +355,10 @@ if atlas_view && isfield(gui_data,'atlas_slices')
     % Store aligned atlas slice for quick referencing on hover
     gui_data.curr_atlas_slice = atlas_slice_aligned;
 
+    % Dilate and burn atlas onto image
     ccf_borders = imdilate(boundarymask(atlas_slice_aligned),ones(overlay_dilation));
-    im_display = imoverlay(im_display,ccf_borders,'w');
+    im_display = labeloverlay(im_display,ccf_borders,'colormap',[1,1,1], ...
+        'transparency',gui_data.overlay.transparency);
 
 end
 
@@ -360,7 +366,12 @@ end
 annotations_menu_idx = contains({gui_data.menu.view.Children.Text},'annotations','IgnoreCase',true);
 annotations_view = strcmp(gui_data.menu.view.Children(annotations_menu_idx).Checked,'on');
 if annotations_view && isfield(AP_histology_processing,'annotation')
-    for curr_annotation = 1:length(AP_histology_processing.annotation)
+    
+    % (set colors for annotations)
+    n_annotations = length(AP_histology_processing.annotation);
+    annotation_colormap = min(1,hsv(n_annotations)+0.4);
+
+    for curr_annotation = 1:n_annotations
         
         curr_vertices = AP_histology_processing.annotation(curr_annotation).vertices_histology{curr_im_idx};
         if isempty(curr_vertices)
@@ -378,16 +389,22 @@ if annotations_view && isfield(AP_histology_processing,'annotation')
                 AP_histology_processing.annotation(curr_annotation).vertices_histology{curr_im_idx});
             annotation_mask = imdilate(bwperim(createMask(annotation_shape,false(size(im_display)))),ones(overlay_dilation));
         end
-        
-        im_display = imoverlay(im_display,annotation_mask,'y');
 
-        % Add label
-        im_display = insertText(im_display, ...
-            mean(AP_histology_processing.annotation(curr_annotation).vertices_histology{curr_im_idx},1), ...
-            AP_histology_processing.annotation(curr_annotation).label, ...
-            'FontSize',min(200,round(max(size(im_display))*0.03)));
-
+        im_display = labeloverlay(im_display,annotation_mask,'colormap',annotation_colormap(curr_annotation,:), ...
+            'transparency',gui_data.overlay.transparency);
     end
+
+    % Add annotation legend (update dummy plot)
+    delete(gui_data.overlay.legend_dummy)
+    gui_data.overlay.legend_dummy = arrayfun(@(x) ...
+        xline(gui_data.im_h.Parent, ...
+        NaN,'linewidth',3,'Color',annotation_colormap(x,:)),1:n_annotations);
+    legend(gui_data.im_h.Parent,{AP_histology_processing.annotation.label}, ...
+        'FontSize',20,'location','southeast');
+
+else
+    % Turn label off if no annotations
+    legend(gui_data.overlay.legend_dummy(1).Parent,'off')
 end
 
 %%%
