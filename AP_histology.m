@@ -395,12 +395,17 @@ if annotations_view && isfield(AP_histology_processing,'annotation')
     end
 
     % Add annotation legend (update dummy plot)
+    try 
+        legend_position = gui_data.im_h.Parent.Legend.Position;
+    catch
+        legend_position = 'southeast';
+    end
     delete(gui_data.overlay.legend_dummy)
     gui_data.overlay.legend_dummy = arrayfun(@(x) ...
         xline(gui_data.im_h.Parent, ...
         NaN,'linewidth',3,'Color',annotation_colormap(x,:)),1:n_annotations);
     legend(gui_data.im_h.Parent,{AP_histology_processing.annotation.label}, ...
-        'FontSize',20,'location','southeast');
+        'FontSize',16,'location',legend_position);
 
 else
     % Turn label off if no annotations
