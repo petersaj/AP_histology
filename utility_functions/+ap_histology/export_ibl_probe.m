@@ -20,7 +20,7 @@ save_path = fullfile(fileparts(histology_guidata.histology_processing_filename),
 probe_line_fits = ap_histology.fit_probe_line(histology_guidata.histology_processing_filename);
 
 % Convert conventions: CCF [AP,DV,ML: 10um] to IBL [ML,AP,DV: 1um]
-ibl_bregma_ccf = [540, 44, 570];
+ibl_bregma_ccf = [540, 44, 570]; % [AP,DV,ML]
 probe_line_fits_ibl = cellfun(@(x) ...
     (x(:,[1,3,2])-ibl_bregma_ccf([3,1,2]))*10, ...
     {probe_line_fits.ccf},'uni',false);
@@ -34,5 +34,4 @@ for curr_probe = 1:length(probe_line_fits_ibl)
     writelines(jsonencode(xyz_picks_struct),save_filename);
 end
 
-histology_guidata.update([],[],histology_gui, ...
-    {'Saved IBL probe coordinates into: ',save_path});
+uiconfirm(histology_gui,sprintf('Exported IBL probe coordinates into: %s',save_path),'Exported IBL','icon','success')

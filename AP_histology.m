@@ -321,7 +321,8 @@ im_display = ap_histology.rigid_transform(im_rgb,curr_im_idx,AP_histology_proces
 
 %%% Add overlays
 
-overlay_dilation = 1;
+% (dilate the overlays depending on image size)
+overlay_dilation = ceil(max(size(im_rescaled,[1,2]))/1000);
 
 % Atlas boundaries 
 atlas_menu_idx = contains({gui_data.menu.view.Children.Text},'atlas','IgnoreCase',true);
